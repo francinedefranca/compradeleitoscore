@@ -417,7 +417,7 @@ export interface Solicitacao {
   aceitesHospitais: AceiteHospital[];
   escolhaEnfermagem?: EscolhaEnfermagem;
   /** Histórico auditável de tentativas manuais de contato com hospitais. */
-  historicoContatos: HistoricoContato[];
+  historicoContatos?: HistoricoContato[];
   /** Etapa do transporte pós-confirmação de leito. */
   statusTransferencia?: StatusTransferencia;
 
