@@ -321,6 +321,17 @@ interface CoreStore {
 
   // Compra direta por decreto de Autoridade Sanitária (RISCO_IMINENTE_MORTE)
   decretarCompraDireta: (solicitacaoId: string, justificativa: string) => void;
+
+  // Busca ativa estratificada + tentativas manuais de contato + transferência
+  atualizarEscopoBusca: (solicitacaoId: string, escopo: EscopoBusca) => void;
+  registrarContato: (
+    solicitacaoId: string,
+    contato: Omit<HistoricoContato, "id" | "registradoPorId" | "registradoPorNome">,
+  ) => void;
+  atualizarStatusTransferencia: (
+    solicitacaoId: string,
+    status: StatusTransferencia,
+  ) => void;
 }
 
 const Ctx = createContext<CoreStore | null>(null);
