@@ -13,7 +13,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { Clock, PercentCircle, BedDouble } from "lucide-react";
+import { Clock, PercentCircle, BedDouble, Network } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
