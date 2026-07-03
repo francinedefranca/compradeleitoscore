@@ -170,22 +170,40 @@ function DashboardGestaoPage() {
             Indicadores semanais: recusa por região, tempo de resposta e mix de leitos.
           </p>
         </div>
-        <Select value={semana} onValueChange={setSemana}>
-          <SelectTrigger className="h-9 w-[200px]">
-            <SelectValue placeholder="Semana" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as semanas</SelectItem>
-            {semanas.map((w) => (
-              <SelectItem key={w} value={w}>
-                {w}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-end gap-2">
+          <Select
+            value={escopoFiltro}
+            onValueChange={(v) => setEscopoFiltro(v as EscopoBusca | "todos")}
+          >
+            <SelectTrigger className="h-9 w-[200px]">
+              <SelectValue placeholder="Escopo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os escopos</SelectItem>
+              {ESCOPOS_BUSCA.map((e) => (
+                <SelectItem key={e} value={e}>
+                  {ESCOPO_BUSCA_LABEL[e]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={semana} onValueChange={setSemana}>
+            <SelectTrigger className="h-9 w-[200px]">
+              <SelectValue placeholder="Semana" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as semanas</SelectItem>
+              {semanas.map((w) => (
+                <SelectItem key={w} value={w}>
+                  {w}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KPI
           icon={PercentCircle}
           label="Taxa de recusa global"
@@ -206,6 +224,13 @@ function DashboardGestaoPage() {
           value={String(distribuicaoTipo.length)}
           hint={`${distribuicaoTipo.reduce((a, b) => a + b.qtd, 0)} solicitações`}
           tone="primary"
+        />
+        <KPI
+          icon={Network}
+          label="Performance de Rede"
+          value={`${performanceRede.taxaRecusa}% recusa`}
+          hint={`${performanceRede.total} contatos • ${performanceRede.aceites} aceites • ${performanceRede.semResposta} sem resposta`}
+          tone="warning"
         />
       </div>
 
