@@ -12,6 +12,7 @@ import {
   type CompraLeito,
   type EscolhaEnfermagem,
   type ProcessoSei,
+  GATILHOS_BYPASS_TRIAGEM,
 } from "./core-types";
 
 // ---------- Datas fixas do seed (SSR/CSR safe) ----------
@@ -311,6 +312,9 @@ interface CoreStore {
   // Recusas e cancelamentos
   recusar: (solicitacaoId: string, motivo: string) => void;
   cancelarAbsorcaoSus: (solicitacaoId: string, justificativa: string) => void;
+
+  // Compra direta por decreto de Autoridade Sanitária (RISCO_IMINENTE_MORTE)
+  decretarCompraDireta: (solicitacaoId: string, justificativa: string) => void;
 }
 
 const Ctx = createContext<CoreStore | null>(null);
@@ -445,7 +449,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         prev.map((s) => {
           if (s.id !== id) return s;
 
-          const bypassJudicial = s.gatilhoCompra === "ORDEM_JUDICIAL_EXPIRADA";
+          const bypassJudicial = GATILHOS_BYPASS_TRIAGEM.includes(s.gatilhoCompra);
 
           // Trava 1: quem emitiu o parecer não pode assinar (salvo judicial)
           if (!bypassJudicial && s.parecer && s.parecer.reguladorId === usuarioAtual.id) {
@@ -773,6 +777,61 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, logAudit],
   );
 
+  const decretarCompraDireta: CoreStore["decretarCompraDireta"] = useCallback(
+    (id, justificativa) => {
+      if (usuarioAtual.perfil !== "AUTORIDADE") {
+        throw new Error("Decreto de compra direta é exclusivo da Autoridade Sanitária.");
+      }
+      if (justificativa.trim().length < 15) {
+        throw new Error("Justificativa obrigatória (mín. 15 caracteres).");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (s.gatilhoCompra !== "RISCO_IMINENTE_MORTE") {
+            throw new Error(
+              "Decreto de compra direta permitido apenas em RISCO_IMINENTE_MORTE.",
+            );
+          }
+          if (
+            s.status === "INTERNADO" ||
+            s.status === "PROCESSO_FINANCEIRO_EM_PAGAMENTO" ||
+            s.status === "AUTORIZADO_AUTORIDADE" ||
+            s.status === "RECUSADO" ||
+            s.status === "CANCELADO_ABSORVIDO_SUS"
+          ) {
+            throw new Error("Fase incompatível para decreto de compra direta.");
+          }
+          const termoNumero = `TA-DIR-${String(Date.now()).slice(-4)}`;
+          const emAt = nowIso();
+          logAudit({
+            solicitacaoId: id,
+            acao: "Decreto de COMPRA DIRETA (Risco Iminente de Morte)",
+            detalhe: `Bypass de triagens habituais • ${justificativa.slice(0, 140)}`,
+            statusAntes: s.status,
+            statusDepois: "AUTORIZADO_AUTORIDADE",
+          });
+          return {
+            ...s,
+            status: "AUTORIZADO_AUTORIDADE",
+            autorizacao: {
+              autoridadeId: usuarioAtual.id,
+              termoNumero,
+              observacoes: `COMPRA DIRETA — ${justificativa}`,
+              assinadoEm: emAt,
+            },
+            compraDireta: {
+              decretadaPorId: usuarioAtual.id,
+              decretadaEm: emAt,
+              justificativa,
+            },
+          };
+        }),
+      );
+    },
+    [usuarioAtual, logAudit],
+  );
+
   const value: CoreStore = {
     usuarioAtual,
     usuarios: USUARIOS_MOCK,
@@ -793,6 +852,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     enviarFaturasParaCompras,
     recusar,
     cancelarAbsorcaoSus,
+    decretarCompraDireta,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

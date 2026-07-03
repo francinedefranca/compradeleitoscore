@@ -217,7 +217,29 @@ export interface Anexo {
   tamanhoKb: number;
 }
 
-export type GatilhoCompra = "ESGOTAMENTO_CLINICO" | "ORDEM_JUDICIAL_EXPIRADA";
+export type GatilhoCompra =
+  // Novos rótulos oficiais da governança CORE/MG
+  | "ESGOTAMENTO_LEITO_SUS"
+  | "DETERMINACAO_JUDICIAL"
+  | "RISCO_IMINENTE_MORTE"
+  // Rótulos legados mantidos para compatibilidade com dados/telas existentes
+  | "ESGOTAMENTO_CLINICO"
+  | "ORDEM_JUDICIAL_EXPIRADA";
+
+export const GATILHO_LABEL: Record<GatilhoCompra, string> = {
+  ESGOTAMENTO_LEITO_SUS: "Esgotamento de Leito SUS",
+  DETERMINACAO_JUDICIAL: "Determinação Judicial",
+  RISCO_IMINENTE_MORTE: "Risco Iminente de Morte",
+  ESGOTAMENTO_CLINICO: "Esgotamento Clínico (legado)",
+  ORDEM_JUDICIAL_EXPIRADA: "Ordem Judicial Expirada (legado)",
+};
+
+// Governança: gatilhos que permitem bypass de triagem/segregação
+export const GATILHOS_BYPASS_TRIAGEM: GatilhoCompra[] = [
+  "DETERMINACAO_JUDICIAL",
+  "ORDEM_JUDICIAL_EXPIRADA",
+  "RISCO_IMINENTE_MORTE",
+];
 
 export type CriterioDesempate =
   | "MENOR_DISTANCIA"
@@ -356,7 +378,37 @@ export interface Solicitacao {
 
   // Multi-perfil segregation ledger — quem registrou o "esgotamento SUS" na fase 1
   registradoEsgotamentoPorId?: string;
+
+  // Governança CORE/MG — controles adicionais
+  /** Justificativa clínica/logística de transporte inter-hospitalar. */
+  justificativaTransporte?: string;
+  /** Checklist SEI consolidado (espelho dos flags de processoSei p/ relatórios). */
+  checklistSei?: {
+    laudo: boolean;
+    termoAcionamento: boolean;
+    termoEsgotamentoSus: boolean;
+  };
+
+  // Indicadores de gestão
+  /** Tempo total de resposta (solicitação → internação), em horas. */
+  tempoRespostaHoras?: number;
+  /** Macrorregião de origem do paciente (espelho de macrorregiaoOrigem). */
+  regiaoOrigem?: Macrorregiao;
+  /** Macrorregião do hospital executor (destino da compra). */
+  regiaoExecutora?: Macrorregiao;
+  /** true = aceite; false = recusa registrada pela ponta hospitalar. */
+  taxaAceiteRecusa?: boolean;
+  /** Tipo de leito efetivamente contratado. */
+  tipoLeito?: ClinicaMedica;
+
+  // Compra direta (decreto de Autoridade Sanitária em RISCO_IMINENTE_MORTE)
+  compraDireta?: {
+    decretadaPorId: string;
+    decretadaEm: string;
+    justificativa: string;
+  };
 }
+
 
 export interface RegistroAuditoria {
   id: string;
