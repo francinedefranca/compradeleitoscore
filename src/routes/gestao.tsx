@@ -24,7 +24,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCore } from "@/lib/core-store";
-import { HOSPITAIS_CREDENCIADOS } from "@/lib/core-types";
+import {
+  ESCOPOS_BUSCA,
+  ESCOPO_BUSCA_LABEL,
+  HOSPITAIS_CREDENCIADOS,
+  type EscopoBusca,
+} from "@/lib/core-types";
 import { chaveSemana, enriquecerSolicitacao } from "@/lib/utils";
 
 export const Route = createFileRoute("/gestao")({
