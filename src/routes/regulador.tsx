@@ -274,6 +274,10 @@ function RegularDialog({
             />
           </div>
 
+          <BuscaTransferenciaControls solicitacao={solicitacao} />
+
+          <RegistroTentativaContato solicitacao={solicitacao} />
+
           <div className="rounded-md border p-3">
             <div className="mb-1 text-xs font-medium text-destructive">Recusar solicitação</div>
             <div className="flex gap-2">
