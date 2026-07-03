@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReguladorRouteImport } from './routes/regulador'
 import { Route as PrestadoresRouteImport } from './routes/prestadores'
+import { Route as GestaoRouteImport } from './routes/gestao'
 import { Route as EnfermeiroRouteImport } from './routes/enfermeiro'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AutoridadeRouteImport } from './routes/autoridade'
@@ -28,6 +29,11 @@ const ReguladorRoute = ReguladorRouteImport.update({
 const PrestadoresRoute = PrestadoresRouteImport.update({
   id: '/prestadores',
   path: '/prestadores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GestaoRoute = GestaoRouteImport.update({
+  id: '/gestao',
+  path: '/gestao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EnfermeiroRoute = EnfermeiroRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/autoridade': typeof AutoridadeRoute
   '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
+  '/gestao': typeof GestaoRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/autoridade': typeof AutoridadeRoute
   '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
+  '/gestao': typeof GestaoRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/autoridade': typeof AutoridadeRoute
   '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
+  '/gestao': typeof GestaoRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/autoridade'
     | '/dashboard'
     | '/enfermeiro'
+    | '/gestao'
     | '/prestadores'
     | '/regulador'
     | '/solicitante/nova'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/autoridade'
     | '/dashboard'
     | '/enfermeiro'
+    | '/gestao'
     | '/prestadores'
     | '/regulador'
     | '/solicitante/nova'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/autoridade'
     | '/dashboard'
     | '/enfermeiro'
+    | '/gestao'
     | '/prestadores'
     | '/regulador'
     | '/solicitante/nova'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   AutoridadeRoute: typeof AutoridadeRoute
   DashboardRoute: typeof DashboardRoute
   EnfermeiroRoute: typeof EnfermeiroRoute
+  GestaoRoute: typeof GestaoRoute
   PrestadoresRoute: typeof PrestadoresRoute
   ReguladorRoute: typeof ReguladorRoute
   SolicitanteNovaRoute: typeof SolicitanteNovaRoute
@@ -174,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/prestadores'
       fullPath: '/prestadores'
       preLoaderRoute: typeof PrestadoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gestao': {
+      id: '/gestao'
+      path: '/gestao'
+      fullPath: '/gestao'
+      preLoaderRoute: typeof GestaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/enfermeiro': {
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutoridadeRoute: AutoridadeRoute,
   DashboardRoute: DashboardRoute,
   EnfermeiroRoute: EnfermeiroRoute,
+  GestaoRoute: GestaoRoute,
   PrestadoresRoute: PrestadoresRoute,
   ReguladorRoute: ReguladorRoute,
   SolicitanteNovaRoute: SolicitanteNovaRoute,
