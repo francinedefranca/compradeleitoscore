@@ -237,3 +237,27 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
     </Card>
   );
 }
+export const TabelaHistorico = ({ contatos }: { contatos: HistoricoContato[] }) => (
+  <table className="w-full text-sm">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Hospital</th>
+        <th>Canal</th>
+        <th>Resultado</th>
+        <th>Justificativa</th>
+      </tr>
+    </thead>
+    <tbody>
+      {contatos.sort((a, b) => b.data.getTime() - a.data.getTime()).map((c) => (
+        <tr key={c.id}>
+          <td>{c.data.toLocaleString()}</td>
+          <td>{c.hospital}</td>
+          <td>{c.canal}</td>
+          <td>{c.resultado}</td>
+          <td>{c.justificativa || '-'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
