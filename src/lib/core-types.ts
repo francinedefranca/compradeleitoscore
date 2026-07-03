@@ -410,10 +410,16 @@ export interface Solicitacao {
   parecer?: ParecerRegulador;
   autorizacao?: AutorizacaoAutoridade;
 
-  // Enfermagem
+  // Enfermagem / Busca ativa estratificada
   buscaIniciadaEm?: string;
+  /** Escopo atual da busca hierárquica (substitui o antigo "Em Busca"). */
+  escopoBuscaAtual?: EscopoBusca;
   aceitesHospitais: AceiteHospital[];
   escolhaEnfermagem?: EscolhaEnfermagem;
+  /** Histórico auditável de tentativas manuais de contato com hospitais. */
+  historicoContatos: HistoricoContato[];
+  /** Etapa do transporte pós-confirmação de leito. */
+  statusTransferencia?: StatusTransferencia;
 
   // Administrativo / SEI
   processoSei?: ProcessoSei;
