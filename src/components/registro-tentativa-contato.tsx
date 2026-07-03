@@ -261,3 +261,11 @@ export const TabelaHistorico = ({ contatos }: { contatos: HistoricoContato[] }) 
     </tbody>
   </table>
 );
+// Substitua o .map original por este modelo seguro:
+{Array.isArray(contatos) && contatos.length > 0 ? (
+  contatos.map((c) => (
+    <tr key={c.id}>...</tr>
+  ))
+) : (
+  <tr><td colSpan={5}>Nenhum contato registrado.</td></tr>
+)}
