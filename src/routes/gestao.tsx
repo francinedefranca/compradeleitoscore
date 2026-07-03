@@ -65,14 +65,37 @@ function DashboardGestaoPage() {
   }, [enriquecidas]);
 
   const [semana, setSemana] = useState<string>("todas");
+  // Filtro estratificado por escopo hierárquico (Macro-Origem / Próxima / Estadual).
+  const [escopoFiltro, setEscopoFiltro] = useState<EscopoBusca | "todos">("todos");
 
-  const filtradas = useMemo(
-    () =>
+  const filtradas = useMemo(() => {
+    const porSemana =
       semana === "todas"
         ? enriquecidas
-        : enriquecidas.filter((s) => chaveSemana(s.criadoEm) === semana),
-    [enriquecidas, semana],
-  );
+        : enriquecidas.filter((s) => chaveSemana(s.criadoEm) === semana);
+    if (escopoFiltro === "todos") return porSemana;
+    // Uma solicitação entra no recorte se o escopo atual bate OU se possui
+    // qualquer histórico de contato no escopo escolhido.
+    return porSemana.filter(
+      (s) =>
+        s.escopoBuscaAtual === escopoFiltro ||
+        (s.historicoContatos ?? []).some((h) => h.escopoBusca === escopoFiltro),
+    );
+  }, [enriquecidas, semana, escopoFiltro]);
+
+  // Performance de Rede: taxa de recusa calculada a partir dos registros manuais
+  // de contato (funciona mesmo quando o hospital não tem login no sistema).
+  const performanceRede = useMemo(() => {
+    const contatos = filtradas
+      .flatMap((s) => s.historicoContatos ?? [])
+      .filter((h) => (escopoFiltro === "todos" ? true : h.escopoBusca === escopoFiltro));
+    const total = contatos.length;
+    const recusas = contatos.filter((c) => c.resultado === "RECUSA").length;
+    const aceites = contatos.filter((c) => c.resultado === "ACEITE").length;
+    const semResposta = contatos.filter((c) => c.resultado === "SEM_RESPOSTA").length;
+    const taxaRecusa = total ? Math.round((recusas / total) * 1000) / 10 : 0;
+    return { total, recusas, aceites, semResposta, taxaRecusa };
+  }, [filtradas, escopoFiltro]);
 
   // 1) Taxa de recusa por região (origem)
   const recusaPorRegiao = useMemo(() => {
