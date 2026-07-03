@@ -57,3 +57,11 @@ export function chaveSemana(iso: string): string {
   );
   return `${inicio.getFullYear()}-W${String(semana).padStart(2, "0")}`;
 }
+export const calcularEscopoSugerido = (dataSolicitacao: Date): 'Macro-Origem' | 'Macro-Próxima' | 'Estadual' => {
+  const agora = new Date();
+  const diferencaHoras = (agora.getTime() - dataSolicitacao.getTime()) / (1000 * 60 * 60);
+
+  if (diferencaHoras >= 24) return 'Estadual';
+  if (diferencaHoras >= 3) return 'Macro-Próxima';
+  return 'Macro-Origem';
+};
