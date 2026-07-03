@@ -4,6 +4,7 @@ export type PerfilId =
   | "SOLICITANTE"
   | "REGULADOR"
   | "AUTORIDADE"
+  | "ENFERMEIRO"
   | "ADMINISTRATIVO"
   | "GESTAO";
 
@@ -17,7 +18,8 @@ export const PERFIS: Perfil[] = [
   { id: "SOLICITANTE", nome: "NIR / Médico Assistente", descricao: "Solicitante de origem" },
   { id: "REGULADOR", nome: "Médico Regulador", descricao: "CORE/MG" },
   { id: "AUTORIDADE", nome: "Autoridade Sanitária", descricao: "Coordenador CORE" },
-  { id: "ADMINISTRATIVO", nome: "Setor de Compras/Contratos", descricao: "Administrativo" },
+  { id: "ENFERMEIRO", nome: "Enfermeiro Navegador", descricao: "Busca ativa de leito credenciado" },
+  { id: "ADMINISTRATIVO", nome: "Setor de Compras/Contratos", descricao: "SEI, faturas e liquidação" },
   { id: "GESTAO", nome: "Gestão SUBASS", descricao: "Painel gerencial" },
 ];
 
@@ -28,46 +30,69 @@ export interface Usuario {
   matricula: string;
   perfil: PerfilId;
   unidade: string;
+  email: string;
+  senha: string; // simulado
 }
 
 export const USUARIOS_MOCK: Usuario[] = [
-  { id: "u1", nome: "Dra. Ana Souza", cpf: "111.222.333-44", matricula: "NIR-001", perfil: "SOLICITANTE", unidade: "HPS João XXIII" },
-  { id: "u2", nome: "Dr. Bruno Lima", cpf: "222.333.444-55", matricula: "REG-014", perfil: "REGULADOR", unidade: "CORE/MG" },
-  { id: "u3", nome: "Dra. Carla Dias", cpf: "333.444.555-66", matricula: "REG-021", perfil: "REGULADOR", unidade: "CORE/MG" },
-  { id: "u4", nome: "Dr. Diego Alves", cpf: "444.555.666-77", matricula: "AUT-003", perfil: "AUTORIDADE", unidade: "Coordenação CORE" },
-  { id: "u5", nome: "Dra. Eliana Reis", cpf: "555.666.777-88", matricula: "AUT-005", perfil: "AUTORIDADE", unidade: "Coordenação CORE" },
-  { id: "u6", nome: "Fernanda Costa", cpf: "666.777.888-99", matricula: "ADM-102", perfil: "ADMINISTRATIVO", unidade: "Setor de Compras" },
-  { id: "u7", nome: "Gestor SUBASS", cpf: "777.888.999-00", matricula: "GES-001", perfil: "GESTAO", unidade: "SUBASS" },
+  { id: "u1", nome: "Dra. Ana Souza", cpf: "111.222.333-44", matricula: "NIR-001", perfil: "SOLICITANTE", unidade: "HPS João XXIII", email: "ana.souza@saude.mg.gov.br", senha: "core2026" },
+  { id: "u2", nome: "Dr. Bruno Lima", cpf: "222.333.444-55", matricula: "REG-014", perfil: "REGULADOR", unidade: "CORE/MG", email: "bruno.lima@saude.mg.gov.br", senha: "core2026" },
+  { id: "u3", nome: "Dra. Carla Dias", cpf: "333.444.555-66", matricula: "REG-021", perfil: "REGULADOR", unidade: "CORE/MG", email: "carla.dias@saude.mg.gov.br", senha: "core2026" },
+  { id: "u4", nome: "Dr. Diego Alves", cpf: "444.555.666-77", matricula: "AUT-003", perfil: "AUTORIDADE", unidade: "Coordenação CORE", email: "diego.alves@saude.mg.gov.br", senha: "core2026" },
+  { id: "u5", nome: "Dra. Eliana Reis", cpf: "555.666.777-88", matricula: "AUT-005", perfil: "AUTORIDADE", unidade: "Coordenação CORE", email: "eliana.reis@saude.mg.gov.br", senha: "core2026" },
+  { id: "u6", nome: "Fernanda Costa", cpf: "666.777.888-99", matricula: "ADM-102", perfil: "ADMINISTRATIVO", unidade: "Setor de Compras", email: "fernanda.costa@saude.mg.gov.br", senha: "core2026" },
+  { id: "u7", nome: "Gestor SUBASS", cpf: "777.888.999-00", matricula: "GES-001", perfil: "GESTAO", unidade: "SUBASS", email: "gestor.subass@saude.mg.gov.br", senha: "core2026" },
+  { id: "u8", nome: "Enf. Helena Prado", cpf: "888.999.000-11", matricula: "ENF-045", perfil: "ENFERMEIRO", unidade: "Núcleo de Navegação CORE", email: "helena.prado@saude.mg.gov.br", senha: "core2026" },
 ];
 
 // Máquina de estados
 export type StatusSolicitacao =
+  | "SOLICITACAO_POR_ESGOTAMENTO_SUS" // == AGUARDANDO_REGULACAO
   | "AGUARDANDO_REGULACAO"
   | "AGUARDANDO_VAGA_ZERO"
-  | "PARECER_EMITIDO"
-  | "AUTORIZADO_AUTORIDADE"
+  | "PARECER_EMITIDO" // TERMO_PENDENTE_HOMOLOGACAO
+  | "TERMO_PENDENTE_HOMOLOGACAO"
+  | "AUTORIZADO_AUTORIDADE" // COMPRA_AUTORIZADA
+  | "COMPRA_AUTORIZADA"
+  | "BUSCA_MACRO_REGIONAL"
+  | "BUSCA_ESTADUAL_EXPANDIDA"
+  | "LEITO_CONFIRMADO_ENFERMAGEM"
+  | "PROCESSO_SEI_INICIADO"
   | "LEITO_COMPRADO"
   | "INTERNADO"
+  | "PROCESSO_FINANCEIRO_EM_PAGAMENTO"
+  | "CANCELADO_ABSORVIDO_SUS"
   | "RECUSADO";
 
 export const STATUS_META: Record<
   StatusSolicitacao,
   { label: string; tone: "info" | "warning" | "success" | "destructive" | "muted" }
 > = {
+  SOLICITACAO_POR_ESGOTAMENTO_SUS: { label: "Solicitação por Esgotamento SUS", tone: "info" },
   AGUARDANDO_REGULACAO: { label: "Aguardando Regulação", tone: "info" },
   AGUARDANDO_VAGA_ZERO: { label: "Aguardando Vaga Zero", tone: "warning" },
   PARECER_EMITIDO: { label: "Parecer Emitido", tone: "info" },
+  TERMO_PENDENTE_HOMOLOGACAO: { label: "Termo Pendente de Homologação", tone: "warning" },
   AUTORIZADO_AUTORIDADE: { label: "Autorizado pela Autoridade Sanitária", tone: "success" },
+  COMPRA_AUTORIZADA: { label: "Compra Autorizada", tone: "success" },
+  BUSCA_MACRO_REGIONAL: { label: "Busca — Macrorregião", tone: "info" },
+  BUSCA_ESTADUAL_EXPANDIDA: { label: "Busca Estadual Expandida", tone: "warning" },
+  LEITO_CONFIRMADO_ENFERMAGEM: { label: "Leito Confirmado (Enfermagem)", tone: "success" },
+  PROCESSO_SEI_INICIADO: { label: "Processo SEI Iniciado", tone: "info" },
   LEITO_COMPRADO: { label: "Leito Comprado", tone: "success" },
   INTERNADO: { label: "Paciente Internado", tone: "success" },
+  PROCESSO_FINANCEIRO_EM_PAGAMENTO: { label: "Processo Financeiro em Pagamento", tone: "success" },
+  CANCELADO_ABSORVIDO_SUS: { label: "Cancelado — Absorvido pelo SUS", tone: "muted" },
   RECUSADO: { label: "Recusado", tone: "destructive" },
 };
 
-// Transições permitidas por perfil (bloqueia edição retroativa)
+// Transições permitidas por perfil (bloqueia edição retroativa).
+// Cancelamento por absorção SUS é tratado à parte no store.
 export const TRANSICOES: Record<
   StatusSolicitacao,
   { proximo: StatusSolicitacao; perfil: PerfilId; rotulo: string }[]
 > = {
+  SOLICITACAO_POR_ESGOTAMENTO_SUS: [],
   AGUARDANDO_REGULACAO: [
     { proximo: "AGUARDANDO_VAGA_ZERO", perfil: "REGULADOR", rotulo: "Registrar tentativa de Vaga Zero" },
     { proximo: "RECUSADO", perfil: "REGULADOR", rotulo: "Recusar solicitação" },
@@ -80,13 +105,36 @@ export const TRANSICOES: Record<
     { proximo: "AUTORIZADO_AUTORIDADE", perfil: "AUTORIDADE", rotulo: "Autorizar compra extraordinária" },
     { proximo: "RECUSADO", perfil: "AUTORIDADE", rotulo: "Negar autorização" },
   ],
+  TERMO_PENDENTE_HOMOLOGACAO: [
+    { proximo: "AUTORIZADO_AUTORIDADE", perfil: "AUTORIDADE", rotulo: "Homologar termo" },
+  ],
   AUTORIZADO_AUTORIDADE: [
-    { proximo: "LEITO_COMPRADO", perfil: "ADMINISTRATIVO", rotulo: "Registrar compra do leito" },
+    { proximo: "BUSCA_MACRO_REGIONAL", perfil: "ENFERMEIRO", rotulo: "Iniciar busca macrorregional" },
+  ],
+  COMPRA_AUTORIZADA: [
+    { proximo: "BUSCA_MACRO_REGIONAL", perfil: "ENFERMEIRO", rotulo: "Iniciar busca macrorregional" },
+  ],
+  BUSCA_MACRO_REGIONAL: [
+    { proximo: "BUSCA_ESTADUAL_EXPANDIDA", perfil: "ENFERMEIRO", rotulo: "Expandir busca ao nível estadual" },
+    { proximo: "LEITO_CONFIRMADO_ENFERMAGEM", perfil: "ENFERMEIRO", rotulo: "Confirmar leito escolhido" },
+  ],
+  BUSCA_ESTADUAL_EXPANDIDA: [
+    { proximo: "LEITO_CONFIRMADO_ENFERMAGEM", perfil: "ENFERMEIRO", rotulo: "Confirmar leito escolhido" },
+  ],
+  LEITO_CONFIRMADO_ENFERMAGEM: [
+    { proximo: "PROCESSO_SEI_INICIADO", perfil: "ADMINISTRATIVO", rotulo: "Abrir processo SEI" },
+  ],
+  PROCESSO_SEI_INICIADO: [
+    { proximo: "LEITO_COMPRADO", perfil: "ADMINISTRATIVO", rotulo: "Registrar empenho/compra" },
   ],
   LEITO_COMPRADO: [
     { proximo: "INTERNADO", perfil: "ADMINISTRATIVO", rotulo: "Confirmar internação efetiva" },
   ],
-  INTERNADO: [],
+  INTERNADO: [
+    { proximo: "PROCESSO_FINANCEIRO_EM_PAGAMENTO", perfil: "ADMINISTRATIVO", rotulo: "Encaminhar faturas ao setor de compras" },
+  ],
+  PROCESSO_FINANCEIRO_EM_PAGAMENTO: [],
+  CANCELADO_ABSORVIDO_SUS: [],
   RECUSADO: [],
 };
 
@@ -138,21 +186,25 @@ export interface HospitalCredenciado {
   cnes: string;
   macrorregiao: Macrorregiao;
   municipio: string;
+  distanciaKmBH: number; // proxy simples para "menor distância"
+  estruturaScore: 1 | 2 | 3 | 4 | 5; // proxy para "melhor estrutura"
+  clinicasDisponiveis: ClinicaMedica[];
+  contatoEmail: string;
 }
 
 export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
-  { id: "h1", nome: "Hospital Vera Cruz", cnes: "2126234", macrorregiao: "Centro", municipio: "Belo Horizonte" },
-  { id: "h2", nome: "Hospital Mater Dei", cnes: "2170438", macrorregiao: "Centro", municipio: "Belo Horizonte" },
-  { id: "h3", nome: "Hospital Santa Rosália", cnes: "2148254", macrorregiao: "Triângulo", municipio: "Uberaba" },
-  { id: "h4", nome: "Hospital Márcio Cunha", cnes: "2140474", macrorregiao: "Vale do Aço", municipio: "Ipatinga" },
-  { id: "h5", nome: "Hospital do Coração", cnes: "2145727", macrorregiao: "Sul", municipio: "Poços de Caldas" },
-  { id: "h6", nome: "Hospital Norte Mineiro", cnes: "2145123", macrorregiao: "Norte", municipio: "Montes Claros" },
+  { id: "h1", nome: "Hospital Vera Cruz", cnes: "2126234", macrorregiao: "Centro", municipio: "Belo Horizonte", distanciaKmBH: 3, estruturaScore: 5, clinicasDisponiveis: ["UTI Adulto", "Cardiologia", "Neurologia"], contatoEmail: "regulacao@veracruz.mg" },
+  { id: "h2", nome: "Hospital Mater Dei", cnes: "2170438", macrorregiao: "Centro", municipio: "Belo Horizonte", distanciaKmBH: 5, estruturaScore: 5, clinicasDisponiveis: ["UTI Adulto", "UTI Pediátrica", "UTI Neonatal", "Trauma"], contatoEmail: "regulacao@materdei.mg" },
+  { id: "h3", nome: "Hospital Santa Rosália", cnes: "2148254", macrorregiao: "Triângulo", municipio: "Uberaba", distanciaKmBH: 490, estruturaScore: 4, clinicasDisponiveis: ["UTI Adulto", "UTI Pediátrica", "Cardiologia"], contatoEmail: "regulacao@santarosalia.mg" },
+  { id: "h4", nome: "Hospital Márcio Cunha", cnes: "2140474", macrorregiao: "Vale do Aço", municipio: "Ipatinga", distanciaKmBH: 210, estruturaScore: 4, clinicasDisponiveis: ["UTI Adulto", "Trauma", "Cardiologia"], contatoEmail: "regulacao@marciocunha.mg" },
+  { id: "h5", nome: "Hospital do Coração", cnes: "2145727", macrorregiao: "Sul", municipio: "Poços de Caldas", distanciaKmBH: 460, estruturaScore: 3, clinicasDisponiveis: ["UTI Adulto", "Cardiologia"], contatoEmail: "regulacao@hcoracao.mg" },
+  { id: "h6", nome: "Hospital Norte Mineiro", cnes: "2145123", macrorregiao: "Norte", municipio: "Montes Claros", distanciaKmBH: 420, estruturaScore: 3, clinicasDisponiveis: ["UTI Adulto", "UTI Pediátrica"], contatoEmail: "regulacao@nortemineiro.mg" },
 ];
 
 export interface SinaisVitais {
-  pa: string; // Pressão arterial
-  fc: string; // Frequência cardíaca
-  fr: string; // Frequência respiratória
+  pa: string;
+  fc: string;
+  fr: string;
   temp: string;
   spo2: string;
   glasgow?: string;
@@ -165,6 +217,19 @@ export interface Anexo {
   tamanhoKb: number;
 }
 
+export type GatilhoCompra = "ESGOTAMENTO_CLINICO" | "ORDEM_JUDICIAL_EXPIRADA";
+
+export type CriterioDesempate =
+  | "MENOR_DISTANCIA"
+  | "MELHOR_ESTRUTURA"
+  | "TIPO_LEITO_ADEQUADO";
+
+export const CRITERIO_DESEMPATE_LABEL: Record<CriterioDesempate, string> = {
+  MENOR_DISTANCIA: "Menor Distância",
+  MELHOR_ESTRUTURA: "Melhor Estrutura",
+  TIPO_LEITO_ADEQUADO: "Tipo de Leito Adequado",
+};
+
 export interface ParecerRegulador {
   reguladorId: string;
   vagaZeroTentada: boolean;
@@ -172,6 +237,7 @@ export interface ParecerRegulador {
   parecerTecnico: string;
   clinicaIndicada: ClinicaMedica;
   emitidoEm: string;
+  checkTermoEsgotamentoSus: boolean;
 }
 
 export interface AutorizacaoAutoridade {
@@ -181,6 +247,30 @@ export interface AutorizacaoAutoridade {
   assinadoEm: string;
 }
 
+export interface AceiteHospital {
+  hospitalId: string;
+  aceitoEm: string;
+  vagasDisponiveis: number;
+}
+
+export interface EscolhaEnfermagem {
+  enfermeiroId: string;
+  hospitalId: string;
+  criterioDesempateUtilizado: CriterioDesempate;
+  justificativa: string;
+  confirmadoEm: string;
+  escopoBusca: "MACRO" | "ESTADUAL";
+}
+
+export interface ProcessoSei {
+  administrativoId: string;
+  numeroSeiProcesso: string;
+  checkLaudoPaciente: boolean;
+  checkTermoAcionamento: boolean;
+  checkTermoEsgotamentoSus: boolean;
+  iniciadoEm: string;
+}
+
 export interface CompraLeito {
   compradorId: string;
   hospitalId: string;
@@ -188,6 +278,24 @@ export interface CompraLeito {
   empenho: string;
   internacaoEm: string;
   registradoEm: string;
+}
+
+export interface EnvioFaturas {
+  administrativoId: string;
+  enviadoEm: string;
+  observacoes: string;
+}
+
+export interface Judicial {
+  numeroMandadoJudicial: string;
+  prazoLimiteJudicial: string; // ISO
+  vara: string;
+}
+
+export interface Cancelamento {
+  canceladoPorId: string;
+  canceladoEm: string;
+  justificativa: string;
 }
 
 export interface Solicitacao {
@@ -214,12 +322,40 @@ export interface Solicitacao {
   justificativa: string;
   anexos: Anexo[];
 
+  // Gatilho
+  gatilhoCompra: GatilhoCompra;
+  judicial?: Judicial;
+
   // Fluxo
   status: StatusSolicitacao;
   criadoEm: string;
+
+  // Marcadores obrigatórios
+  checkTermoEsgotamentoSus: boolean;
+
+  // Etapas
   parecer?: ParecerRegulador;
   autorizacao?: AutorizacaoAutoridade;
+
+  // Enfermagem
+  buscaIniciadaEm?: string;
+  aceitesHospitais: AceiteHospital[];
+  escolhaEnfermagem?: EscolhaEnfermagem;
+
+  // Administrativo / SEI
+  processoSei?: ProcessoSei;
+  numeroSeiProcesso?: string;
+
+  // Compra / Faturamento
   compra?: CompraLeito;
+  faturasEnviadasCompras: boolean;
+  envioFaturas?: EnvioFaturas;
+
+  // Cancelamento
+  cancelamento?: Cancelamento;
+
+  // Multi-perfil segregation ledger — quem registrou o "esgotamento SUS" na fase 1
+  registradoEsgotamentoPorId?: string;
 }
 
 export interface RegistroAuditoria {

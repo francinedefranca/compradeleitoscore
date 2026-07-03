@@ -8,6 +8,7 @@ import {
   History,
   Building2,
   Activity,
+  Search,
 } from "lucide-react";
 
 import {
@@ -40,7 +41,8 @@ const navModulos: NavItem[] = [
   { title: "Nova Solicitação", url: "/solicitante/nova", icon: Activity, perfis: ["SOLICITANTE"] },
   { title: "Fila de Regulação", url: "/regulador", icon: Stethoscope, perfis: ["REGULADOR"] },
   { title: "Homologação", url: "/autoridade", icon: ShieldCheck, perfis: ["AUTORIDADE"] },
-  { title: "Compras Autorizadas", url: "/administrativo", icon: Briefcase, perfis: ["ADMINISTRATIVO"] },
+  { title: "Enfermagem Navegadora", url: "/enfermeiro", icon: Search, perfis: ["ENFERMEIRO"] },
+  { title: "Administrativo / SEI", url: "/administrativo", icon: Briefcase, perfis: ["ADMINISTRATIVO"] },
 ];
 
 const navSuporte: NavItem[] = [

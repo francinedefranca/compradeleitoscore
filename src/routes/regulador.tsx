@@ -162,6 +162,7 @@ function RegularDialog({
           vagaZeroDetalhe,
           parecerTecnico: "Aguardando tentativa de Vaga Zero.",
           clinicaIndicada: clinica,
+          checkTermoEsgotamentoSus: false,
         },
         "AGUARDANDO_VAGA_ZERO",
       );
@@ -185,6 +186,7 @@ function RegularDialog({
           vagaZeroDetalhe,
           parecerTecnico,
           clinicaIndicada: clinica,
+          checkTermoEsgotamentoSus: true,
         },
         "PARECER_EMITIDO",
       );

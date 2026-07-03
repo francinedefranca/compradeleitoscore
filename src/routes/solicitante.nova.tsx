@@ -89,6 +89,8 @@ function NovaSolicitacao() {
           pa: data.pa, fc: data.fc, fr: data.fr, temp: data.temp, spo2: data.spo2, glasgow: data.glasgow,
         },
         anexos,
+        gatilhoCompra: "ESGOTAMENTO_CLINICO",
+        checkTermoEsgotamentoSus: false,
       });
       toast.success(`Solicitação ${nova.protocolo} enviada à Regulação.`);
       navigate({ to: "/solicitante" });

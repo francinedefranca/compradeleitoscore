@@ -10,12 +10,17 @@ import {
   type ParecerRegulador,
   type AutorizacaoAutoridade,
   type CompraLeito,
+  type EscolhaEnfermagem,
+  type ProcessoSei,
 } from "./core-types";
 
-// ---------- Dados iniciais (mock realista) ----------
+// ---------- Datas fixas do seed (SSR/CSR safe) ----------
+const SEED_NOW = "2026-07-03T14:00:00.000Z";
 const nowIso = () => new Date().toISOString();
-const daysAgo = (d: number) => new Date(Date.now() - d * 86400_000).toISOString();
-const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
+const isoOffsetMs = (from: string, ms: number) =>
+  new Date(new Date(from).getTime() - ms).toISOString();
+const hoursAgo = (h: number) => isoOffsetMs(SEED_NOW, h * 3600_000);
+const daysAgo = (d: number) => isoOffsetMs(SEED_NOW, d * 86400_000);
 
 const seedSolicitacoes: Solicitacao[] = [
   {
@@ -38,8 +43,13 @@ const seedSolicitacoes: Solicitacao[] = [
       { id: "a1", nome: "TC-cranio.pdf", tipo: "application/pdf", tamanhoKb: 812 },
       { id: "a2", nome: "hemograma.pdf", tipo: "application/pdf", tamanhoKb: 145 },
     ],
+    gatilhoCompra: "ESGOTAMENTO_CLINICO",
     status: "AGUARDANDO_REGULACAO",
     criadoEm: hoursAgo(2),
+    checkTermoEsgotamentoSus: false,
+    aceitesHospitais: [],
+    faturasEnviadasCompras: false,
+    registradoEsgotamentoPorId: "u1",
   },
   {
     id: "s2",
@@ -58,9 +68,13 @@ const seedSolicitacoes: Solicitacao[] = [
     sinaisVitais: { pa: "90/60", fc: "128", fr: "26", temp: "36.2", spo2: "89%" },
     justificativa: "Choque cardiogênico. Necessário hemodinâmica em UTI Cardiológica.",
     anexos: [{ id: "a3", nome: "ecg.pdf", tipo: "application/pdf", tamanhoKb: 320 }],
+    gatilhoCompra: "ESGOTAMENTO_CLINICO",
     status: "AGUARDANDO_VAGA_ZERO",
     criadoEm: hoursAgo(6),
-    parecer: undefined,
+    checkTermoEsgotamentoSus: true,
+    aceitesHospitais: [],
+    faturasEnviadasCompras: false,
+    registradoEsgotamentoPorId: "u1",
   },
   {
     id: "s3",
@@ -79,8 +93,13 @@ const seedSolicitacoes: Solicitacao[] = [
     sinaisVitais: { pa: "80/50", fc: "140", fr: "42", temp: "39.1", spo2: "88%" },
     justificativa: "Paciente pediátrico necessitando UTI Pediátrica com ventilação mecânica.",
     anexos: [],
+    gatilhoCompra: "ESGOTAMENTO_CLINICO",
     status: "PARECER_EMITIDO",
     criadoEm: daysAgo(1),
+    checkTermoEsgotamentoSus: true,
+    aceitesHospitais: [],
+    faturasEnviadasCompras: false,
+    registradoEsgotamentoPorId: "u1",
     parecer: {
       reguladorId: "u2",
       vagaZeroTentada: true,
@@ -90,6 +109,7 @@ const seedSolicitacoes: Solicitacao[] = [
         "Esgotados os leitos públicos da macrorregião Triângulo. Indica-se compra extraordinária de leito de UTI Pediátrica em prestador credenciado.",
       clinicaIndicada: "UTI Pediátrica",
       emitidoEm: hoursAgo(10),
+      checkTermoEsgotamentoSus: true,
     },
   },
   {
@@ -109,8 +129,13 @@ const seedSolicitacoes: Solicitacao[] = [
     sinaisVitais: { pa: "70/40", fc: "138", fr: "30", temp: "39.6", spo2: "90%" },
     justificativa: "UTI Adulto imediata com suporte hemodinâmico avançado.",
     anexos: [],
+    gatilhoCompra: "ESGOTAMENTO_CLINICO",
     status: "AUTORIZADO_AUTORIDADE",
     criadoEm: daysAgo(1),
+    checkTermoEsgotamentoSus: true,
+    aceitesHospitais: [],
+    faturasEnviadasCompras: false,
+    registradoEsgotamentoPorId: "u1",
     parecer: {
       reguladorId: "u3",
       vagaZeroTentada: true,
@@ -119,6 +144,7 @@ const seedSolicitacoes: Solicitacao[] = [
         "Esgotamento de leitos SUS. Justificada aquisição extraordinária de UTI Adulto.",
       clinicaIndicada: "UTI Adulto",
       emitidoEm: daysAgo(1),
+      checkTermoEsgotamentoSus: true,
     },
     autorizacao: {
       autoridadeId: "u4",
@@ -144,8 +170,13 @@ const seedSolicitacoes: Solicitacao[] = [
     sinaisVitais: { pa: "100/60", fc: "120", fr: "22", temp: "36.5", spo2: "94%", glasgow: "10" },
     justificativa: "UTI Trauma com suporte neurocirúrgico.",
     anexos: [],
+    gatilhoCompra: "ESGOTAMENTO_CLINICO",
     status: "INTERNADO",
     criadoEm: daysAgo(3),
+    checkTermoEsgotamentoSus: true,
+    aceitesHospitais: [],
+    faturasEnviadasCompras: false,
+    registradoEsgotamentoPorId: "u1",
     parecer: {
       reguladorId: "u2",
       vagaZeroTentada: true,
@@ -153,6 +184,7 @@ const seedSolicitacoes: Solicitacao[] = [
       parecerTecnico: "Compra de leito de UTI justificada.",
       clinicaIndicada: "UTI Adulto",
       emitidoEm: daysAgo(3),
+      checkTermoEsgotamentoSus: true,
     },
     autorizacao: {
       autoridadeId: "u5",
@@ -167,6 +199,46 @@ const seedSolicitacoes: Solicitacao[] = [
       empenho: "EMP-2026-0421",
       internacaoEm: daysAgo(2),
       registradoEm: daysAgo(2),
+    },
+  },
+  {
+    id: "s6",
+    protocolo: "CORE-2026-0006",
+    solicitanteId: "u1",
+    unidadeOrigem: "Hospital Regional Norte",
+    macrorregiaoOrigem: "Norte",
+    municipioOrigem: "Montes Claros",
+    pacienteNome: "Carlos Judicial de Souza",
+    pacienteCpf: "678.901.234-55",
+    pacienteCns: "700 1122 3344 5599",
+    pacienteNascimento: "1980-01-15",
+    diagnosticoPrincipal: "Insuficiência renal aguda por sepse",
+    cid: "N17.9",
+    gravidade: "LARANJA",
+    sinaisVitais: { pa: "110/70", fc: "115", fr: "22", temp: "38.5", spo2: "93%" },
+    justificativa: "Ordem judicial de internação em UTI com hemodiálise.",
+    anexos: [{ id: "a6", nome: "mandado-judicial.pdf", tipo: "application/pdf", tamanhoKb: 220 }],
+    gatilhoCompra: "ORDEM_JUDICIAL_EXPIRADA",
+    judicial: {
+      numeroMandadoJudicial: "5001234-56.2026.8.13.0433",
+      prazoLimiteJudicial: hoursAgo(-24),
+      vara: "1ª Vara da Fazenda Pública — Montes Claros",
+    },
+    status: "PARECER_EMITIDO",
+    criadoEm: daysAgo(1),
+    checkTermoEsgotamentoSus: true,
+    aceitesHospitais: [],
+    faturasEnviadasCompras: false,
+    registradoEsgotamentoPorId: "u1",
+    parecer: {
+      reguladorId: "u2",
+      vagaZeroTentada: true,
+      vagaZeroDetalhe: "Vaga Zero acionada sem retorno.",
+      parecerTecnico:
+        "Prazo judicial vigente. Indicada compra extraordinária de UTI Adulto com hemodiálise.",
+      clinicaIndicada: "UTI Adulto",
+      emitidoEm: hoursAgo(6),
+      checkTermoEsgotamentoSus: true,
     },
   },
 ];
@@ -185,19 +257,60 @@ const seedAuditoria: RegistroAuditoria[] = seedSolicitacoes.map((s, i) => ({
 }));
 
 // ---------- Store ----------
+type NovaSolicitacaoInput = Omit<
+  Solicitacao,
+  | "id"
+  | "protocolo"
+  | "status"
+  | "criadoEm"
+  | "solicitanteId"
+  | "unidadeOrigem"
+  | "aceitesHospitais"
+  | "faturasEnviadasCompras"
+  | "registradoEsgotamentoPorId"
+>;
+
 interface CoreStore {
   usuarioAtual: Usuario;
   usuarios: Usuario[];
   solicitacoes: Solicitacao[];
   auditoria: RegistroAuditoria[];
+
+  loginPorEmail: (email: string, senha: string) => { ok: true } | { ok: false; erro: string };
   trocarUsuario: (id: string) => void;
 
-  criarSolicitacao: (dados: Omit<Solicitacao, "id" | "protocolo" | "status" | "criadoEm" | "solicitanteId" | "unidadeOrigem">) => Solicitacao;
-  emitirParecer: (solicitacaoId: string, parecer: Omit<ParecerRegulador, "reguladorId" | "emitidoEm">, novoStatus: Extract<StatusSolicitacao, "AGUARDANDO_VAGA_ZERO" | "PARECER_EMITIDO">) => void;
-  autorizarCompra: (solicitacaoId: string, autorizacao: Omit<AutorizacaoAutoridade, "autoridadeId" | "assinadoEm" | "termoNumero">) => void;
+  criarSolicitacao: (dados: NovaSolicitacaoInput) => Solicitacao;
+  emitirParecer: (
+    solicitacaoId: string,
+    parecer: Omit<ParecerRegulador, "reguladorId" | "emitidoEm">,
+    novoStatus: Extract<StatusSolicitacao, "AGUARDANDO_VAGA_ZERO" | "PARECER_EMITIDO">,
+  ) => void;
+  autorizarCompra: (
+    solicitacaoId: string,
+    autorizacao: Omit<AutorizacaoAutoridade, "autoridadeId" | "assinadoEm" | "termoNumero">,
+  ) => void;
+
+  // Enfermagem
+  iniciarBuscaMacro: (solicitacaoId: string) => void;
+  registrarAceite: (solicitacaoId: string, hospitalId: string, vagas?: number) => void;
+  expandirParaEstadual: (solicitacaoId: string) => void;
+  confirmarLeitoEnfermagem: (
+    solicitacaoId: string,
+    escolha: Omit<EscolhaEnfermagem, "enfermeiroId" | "confirmadoEm">,
+  ) => void;
+
+  // Administrativo / SEI
+  abrirProcessoSei: (
+    solicitacaoId: string,
+    sei: Omit<ProcessoSei, "administrativoId" | "iniciadoEm">,
+  ) => void;
   registrarCompra: (solicitacaoId: string, compra: Omit<CompraLeito, "compradorId" | "registradoEm">) => void;
   registrarInternacao: (solicitacaoId: string) => void;
+  enviarFaturasParaCompras: (solicitacaoId: string, observacoes: string) => void;
+
+  // Recusas e cancelamentos
   recusar: (solicitacaoId: string, motivo: string) => void;
+  cancelarAbsorcaoSus: (solicitacaoId: string, justificativa: string) => void;
 }
 
 const Ctx = createContext<CoreStore | null>(null);
@@ -213,10 +326,11 @@ export function CoreProvider({ children }: { children: ReactNode }) {
   );
 
   const logAudit = useCallback(
-    (r: Omit<RegistroAuditoria, "id" | "emAt" | "usuarioId" | "usuarioNome" | "usuarioCpf" | "perfil">, atorId?: string) => {
-      const ator = atorId
-        ? USUARIOS_MOCK.find((u) => u.id === atorId)!
-        : usuarioAtual;
+    (
+      r: Omit<RegistroAuditoria, "id" | "emAt" | "usuarioId" | "usuarioNome" | "usuarioCpf" | "perfil">,
+      atorId?: string,
+    ) => {
+      const ator = atorId ? USUARIOS_MOCK.find((u) => u.id === atorId)! : usuarioAtual;
       setAuditoria((prev) => [
         {
           ...r,
@@ -246,6 +360,15 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const loginPorEmail: CoreStore["loginPorEmail"] = useCallback((email, senha) => {
+    const u = USUARIOS_MOCK.find(
+      (x) => x.email.toLowerCase() === email.trim().toLowerCase() && x.senha === senha,
+    );
+    if (!u) return { ok: false, erro: "E-mail ou senha inválidos." };
+    setUsuarioAtualId(u.id);
+    return { ok: true };
+  }, []);
+
   const criarSolicitacao: CoreStore["criarSolicitacao"] = useCallback(
     (dados) => {
       if (usuarioAtual.perfil !== "SOLICITANTE") {
@@ -260,12 +383,15 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         criadoEm: nowIso(),
         solicitanteId: usuarioAtual.id,
         unidadeOrigem: usuarioAtual.unidade,
+        aceitesHospitais: [],
+        faturasEnviadasCompras: false,
+        registradoEsgotamentoPorId: usuarioAtual.id,
       };
       setSolicitacoes((prev) => [nova, ...prev]);
       logAudit({
         solicitacaoId: nova.id,
         acao: "Criação da solicitação",
-        detalhe: `Paciente ${nova.pacienteNome} • ${nova.diagnosticoPrincipal}`,
+        detalhe: `Paciente ${nova.pacienteNome} • ${nova.diagnosticoPrincipal} • Gatilho: ${nova.gatilhoCompra}`,
         statusDepois: "AGUARDANDO_REGULACAO",
       });
       return nova;
@@ -286,6 +412,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
           const novo: Solicitacao = {
             ...s,
             status: novoStatus,
+            checkTermoEsgotamentoSus: parecer.checkTermoEsgotamentoSus || s.checkTermoEsgotamentoSus,
             parecer: {
               ...parecer,
               reguladorId: usuarioAtual.id,
@@ -317,12 +444,22 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       setSolicitacoes((prev) =>
         prev.map((s) => {
           if (s.id !== id) return s;
-          // Trava de segurança: quem emitiu o parecer não pode autorizar
-          if (s.parecer && s.parecer.reguladorId === usuarioAtual.id) {
+
+          const bypassJudicial = s.gatilhoCompra === "ORDEM_JUDICIAL_EXPIRADA";
+
+          // Trava 1: quem emitiu o parecer não pode assinar (salvo judicial)
+          if (!bypassJudicial && s.parecer && s.parecer.reguladorId === usuarioAtual.id) {
             throw new Error(
-              "Segregação de funções: o autor do parecer técnico não pode autorizar o Termo de Acionamento.",
+              "Segregação de funções: o autor do parecer técnico não pode autorizar o Termo (exceto ordem judicial expirada).",
             );
           }
+          // Trava 2: quem registrou o esgotamento SUS (fase 1) não pode autorizar (salvo judicial)
+          if (!bypassJudicial && s.registradoEsgotamentoPorId === usuarioAtual.id) {
+            throw new Error(
+              "Segregação de funções: o profissional que registrou o esgotamento SUS não pode autorizar a compra (exceto ordem judicial expirada).",
+            );
+          }
+
           validarTransicao(s.status, "AUTORIZADO_AUTORIDADE", "AUTORIDADE");
           const termoNumero = `TA-2026-${String(Date.now()).slice(-4)}`;
           const novo: Solicitacao = {
@@ -337,10 +474,151 @@ export function CoreProvider({ children }: { children: ReactNode }) {
           };
           logAudit({
             solicitacaoId: id,
-            acao: "Assinatura do Termo de Acionamento",
-            detalhe: `Termo ${termoNumero}`,
+            acao: bypassJudicial
+              ? "Assinatura do Termo (bypass judicial)"
+              : "Assinatura do Termo de Acionamento",
+            detalhe: `Termo ${termoNumero}${bypassJudicial ? " • Ordem judicial vigente" : ""}`,
             statusAntes: s.status,
             statusDepois: "AUTORIZADO_AUTORIDADE",
+          });
+          return novo;
+        }),
+      );
+    },
+    [usuarioAtual, logAudit, validarTransicao],
+  );
+
+  // ---- Enfermagem ----
+  const iniciarBuscaMacro: CoreStore["iniciarBuscaMacro"] = useCallback(
+    (id) => {
+      if (usuarioAtual.perfil !== "ENFERMEIRO") {
+        throw new Error("Somente o Enfermeiro Navegador pode iniciar a busca.");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          validarTransicao(s.status, "BUSCA_MACRO_REGIONAL", "ENFERMEIRO");
+          logAudit({
+            solicitacaoId: id,
+            acao: "Início da busca ativa (macrorregional)",
+            statusAntes: s.status,
+            statusDepois: "BUSCA_MACRO_REGIONAL",
+          });
+          return { ...s, status: "BUSCA_MACRO_REGIONAL", buscaIniciadaEm: nowIso() };
+        }),
+      );
+    },
+    [usuarioAtual, logAudit, validarTransicao],
+  );
+
+  const registrarAceite: CoreStore["registrarAceite"] = useCallback(
+    (id, hospitalId, vagas = 1) => {
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (s.aceitesHospitais.some((a) => a.hospitalId === hospitalId)) return s;
+          const novo = {
+            ...s,
+            aceitesHospitais: [
+              ...s.aceitesHospitais,
+              { hospitalId, aceitoEm: nowIso(), vagasDisponiveis: vagas },
+            ],
+          };
+          logAudit({
+            solicitacaoId: id,
+            acao: "Aceite recebido do hospital credenciado",
+            detalhe: `Hospital ${hospitalId} • ${vagas} vaga(s)`,
+          });
+          return novo;
+        }),
+      );
+    },
+    [logAudit],
+  );
+
+  const expandirParaEstadual: CoreStore["expandirParaEstadual"] = useCallback(
+    (id) => {
+      if (usuarioAtual.perfil !== "ENFERMEIRO") {
+        throw new Error("Somente o Enfermeiro Navegador pode expandir a busca.");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          validarTransicao(s.status, "BUSCA_ESTADUAL_EXPANDIDA", "ENFERMEIRO");
+          logAudit({
+            solicitacaoId: id,
+            acao: "Expansão da busca para nível estadual",
+            statusAntes: s.status,
+            statusDepois: "BUSCA_ESTADUAL_EXPANDIDA",
+          });
+          return { ...s, status: "BUSCA_ESTADUAL_EXPANDIDA" };
+        }),
+      );
+    },
+    [usuarioAtual, logAudit, validarTransicao],
+  );
+
+  const confirmarLeitoEnfermagem: CoreStore["confirmarLeitoEnfermagem"] = useCallback(
+    (id, escolha) => {
+      if (usuarioAtual.perfil !== "ENFERMEIRO") {
+        throw new Error("Somente o Enfermeiro Navegador pode confirmar o leito.");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          validarTransicao(s.status, "LEITO_CONFIRMADO_ENFERMAGEM", "ENFERMEIRO");
+          const novo: Solicitacao = {
+            ...s,
+            status: "LEITO_CONFIRMADO_ENFERMAGEM",
+            escolhaEnfermagem: {
+              ...escolha,
+              enfermeiroId: usuarioAtual.id,
+              confirmadoEm: nowIso(),
+            },
+          };
+          logAudit({
+            solicitacaoId: id,
+            acao: "Leito confirmado pela Enfermagem",
+            detalhe: `Hospital ${escolha.hospitalId} • Critério: ${escolha.criterioDesempateUtilizado}`,
+            statusAntes: s.status,
+            statusDepois: "LEITO_CONFIRMADO_ENFERMAGEM",
+          });
+          return novo;
+        }),
+      );
+    },
+    [usuarioAtual, logAudit, validarTransicao],
+  );
+
+  // ---- Administrativo / SEI ----
+  const abrirProcessoSei: CoreStore["abrirProcessoSei"] = useCallback(
+    (id, sei) => {
+      if (usuarioAtual.perfil !== "ADMINISTRATIVO") {
+        throw new Error("Somente o Setor Administrativo pode abrir processo SEI.");
+      }
+      if (!sei.checkLaudoPaciente || !sei.checkTermoAcionamento || !sei.checkTermoEsgotamentoSus) {
+        throw new Error("Checklist documental incompleto (3 peças obrigatórias).");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          validarTransicao(s.status, "PROCESSO_SEI_INICIADO", "ADMINISTRATIVO");
+          const novo: Solicitacao = {
+            ...s,
+            status: "PROCESSO_SEI_INICIADO",
+            numeroSeiProcesso: sei.numeroSeiProcesso,
+            processoSei: {
+              ...sei,
+              administrativoId: usuarioAtual.id,
+              iniciadoEm: nowIso(),
+            },
+          };
+          logAudit({
+            solicitacaoId: id,
+            acao: "Abertura de Processo SEI",
+            detalhe: `SEI ${sei.numeroSeiProcesso}`,
+            statusAntes: s.status,
+            statusDepois: "PROCESSO_SEI_INICIADO",
           });
           return novo;
         }),
@@ -403,6 +681,39 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, logAudit, validarTransicao],
   );
 
+  const enviarFaturasParaCompras: CoreStore["enviarFaturasParaCompras"] = useCallback(
+    (id, observacoes) => {
+      if (usuarioAtual.perfil !== "ADMINISTRATIVO") {
+        throw new Error("Somente Setor Administrativo pode encaminhar faturas.");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          validarTransicao(s.status, "PROCESSO_FINANCEIRO_EM_PAGAMENTO", "ADMINISTRATIVO");
+          const novo: Solicitacao = {
+            ...s,
+            status: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
+            faturasEnviadasCompras: true,
+            envioFaturas: {
+              administrativoId: usuarioAtual.id,
+              enviadoEm: nowIso(),
+              observacoes,
+            },
+          };
+          logAudit({
+            solicitacaoId: id,
+            acao: "Encaminhamento de faturas ao Setor de Compras",
+            detalhe: observacoes.slice(0, 160),
+            statusAntes: s.status,
+            statusDepois: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
+          });
+          return novo;
+        }),
+      );
+    },
+    [usuarioAtual, logAudit, validarTransicao],
+  );
+
   const recusar: CoreStore["recusar"] = useCallback(
     (id, motivo) => {
       if (usuarioAtual.perfil !== "REGULADOR" && usuarioAtual.perfil !== "AUTORIDADE") {
@@ -426,18 +737,62 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, logAudit, validarTransicao],
   );
 
+  const cancelarAbsorcaoSus: CoreStore["cancelarAbsorcaoSus"] = useCallback(
+    (id, justificativa) => {
+      if (justificativa.trim().length < 15) {
+        throw new Error("Justificativa obrigatória (mín. 15 caracteres).");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (s.status === "INTERNADO" || s.status === "PROCESSO_FINANCEIRO_EM_PAGAMENTO") {
+            throw new Error("Cancelamento por absorção SUS não permitido após internação definitiva.");
+          }
+          if (s.status === "CANCELADO_ABSORVIDO_SUS" || s.status === "RECUSADO") {
+            throw new Error("Solicitação já encerrada.");
+          }
+          logAudit({
+            solicitacaoId: id,
+            acao: "Cancelamento por absorção SUS",
+            detalhe: justificativa,
+            statusAntes: s.status,
+            statusDepois: "CANCELADO_ABSORVIDO_SUS",
+          });
+          return {
+            ...s,
+            status: "CANCELADO_ABSORVIDO_SUS",
+            cancelamento: {
+              canceladoPorId: usuarioAtual.id,
+              canceladoEm: nowIso(),
+              justificativa,
+            },
+          };
+        }),
+      );
+    },
+    [usuarioAtual, logAudit],
+  );
+
   const value: CoreStore = {
     usuarioAtual,
     usuarios: USUARIOS_MOCK,
     solicitacoes,
     auditoria,
+    loginPorEmail,
     trocarUsuario: setUsuarioAtualId,
     criarSolicitacao,
     emitirParecer,
     autorizarCompra,
+    iniciarBuscaMacro,
+    registrarAceite,
+    expandirParaEstadual,
+    confirmarLeitoEnfermagem,
+    abrirProcessoSei,
     registrarCompra,
     registrarInternacao,
+    enviarFaturasParaCompras,
     recusar,
+    cancelarAbsorcaoSus,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
