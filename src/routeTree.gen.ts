@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReguladorRouteImport } from './routes/regulador'
 import { Route as PrestadoresRouteImport } from './routes/prestadores'
+import { Route as GestaoRouteImport } from './routes/gestao'
 import { Route as EnfermeiroRouteImport } from './routes/enfermeiro'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AutoridadeRouteImport } from './routes/autoridade'
@@ -19,7 +20,6 @@ import { Route as AdministrativoRouteImport } from './routes/administrativo'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SolicitanteIndexRouteImport } from './routes/solicitante.index'
 import { Route as SolicitanteNovaRouteImport } from './routes/solicitante.nova'
-import { Route as DashboardGestaoRouteImport } from './routes/dashboard.gestao'
 
 const ReguladorRoute = ReguladorRouteImport.update({
   id: '/regulador',
@@ -29,6 +29,11 @@ const ReguladorRoute = ReguladorRouteImport.update({
 const PrestadoresRoute = PrestadoresRouteImport.update({
   id: '/prestadores',
   path: '/prestadores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GestaoRoute = GestaoRouteImport.update({
+  id: '/gestao',
+  path: '/gestao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EnfermeiroRoute = EnfermeiroRouteImport.update({
@@ -71,22 +76,17 @@ const SolicitanteNovaRoute = SolicitanteNovaRouteImport.update({
   path: '/solicitante/nova',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardGestaoRoute = DashboardGestaoRouteImport.update({
-  id: '/gestao',
-  path: '/gestao',
-  getParentRoute: () => DashboardRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
-  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
+  '/gestao': typeof GestaoRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
-  '/dashboard/gestao': typeof DashboardGestaoRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
   '/solicitante/': typeof SolicitanteIndexRoute
 }
@@ -95,11 +95,11 @@ export interface FileRoutesByTo {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
-  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
+  '/gestao': typeof GestaoRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
-  '/dashboard/gestao': typeof DashboardGestaoRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
   '/solicitante': typeof SolicitanteIndexRoute
 }
@@ -109,11 +109,11 @@ export interface FileRoutesById {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
-  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
+  '/gestao': typeof GestaoRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
-  '/dashboard/gestao': typeof DashboardGestaoRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
   '/solicitante/': typeof SolicitanteIndexRoute
 }
@@ -126,9 +126,9 @@ export interface FileRouteTypes {
     | '/autoridade'
     | '/dashboard'
     | '/enfermeiro'
+    | '/gestao'
     | '/prestadores'
     | '/regulador'
-    | '/dashboard/gestao'
     | '/solicitante/nova'
     | '/solicitante/'
   fileRoutesByTo: FileRoutesByTo
@@ -139,9 +139,9 @@ export interface FileRouteTypes {
     | '/autoridade'
     | '/dashboard'
     | '/enfermeiro'
+    | '/gestao'
     | '/prestadores'
     | '/regulador'
-    | '/dashboard/gestao'
     | '/solicitante/nova'
     | '/solicitante'
   id:
@@ -152,9 +152,9 @@ export interface FileRouteTypes {
     | '/autoridade'
     | '/dashboard'
     | '/enfermeiro'
+    | '/gestao'
     | '/prestadores'
     | '/regulador'
-    | '/dashboard/gestao'
     | '/solicitante/nova'
     | '/solicitante/'
   fileRoutesById: FileRoutesById
@@ -164,8 +164,9 @@ export interface RootRouteChildren {
   AdministrativoRoute: typeof AdministrativoRoute
   AuditoriaRoute: typeof AuditoriaRoute
   AutoridadeRoute: typeof AutoridadeRoute
-  DashboardRoute: typeof DashboardRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   EnfermeiroRoute: typeof EnfermeiroRoute
+  GestaoRoute: typeof GestaoRoute
   PrestadoresRoute: typeof PrestadoresRoute
   ReguladorRoute: typeof ReguladorRoute
   SolicitanteNovaRoute: typeof SolicitanteNovaRoute
@@ -186,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/prestadores'
       fullPath: '/prestadores'
       preLoaderRoute: typeof PrestadoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gestao': {
+      id: '/gestao'
+      path: '/gestao'
+      fullPath: '/gestao'
+      preLoaderRoute: typeof GestaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/enfermeiro': {
@@ -244,35 +252,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SolicitanteNovaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/gestao': {
-      id: '/dashboard/gestao'
-      path: '/gestao'
-      fullPath: '/dashboard/gestao'
-      preLoaderRoute: typeof DashboardGestaoRouteImport
-      parentRoute: typeof DashboardRoute
-    }
   }
 }
-
-interface DashboardRouteChildren {
-  DashboardGestaoRoute: typeof DashboardGestaoRoute
-}
-
-const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardGestaoRoute: DashboardGestaoRoute,
-}
-
-const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
-  DashboardRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdministrativoRoute: AdministrativoRoute,
   AuditoriaRoute: AuditoriaRoute,
   AutoridadeRoute: AutoridadeRoute,
-  DashboardRoute: DashboardRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   EnfermeiroRoute: EnfermeiroRoute,
+  GestaoRoute: GestaoRoute,
   PrestadoresRoute: PrestadoresRoute,
   ReguladorRoute: ReguladorRoute,
   SolicitanteNovaRoute: SolicitanteNovaRoute,
