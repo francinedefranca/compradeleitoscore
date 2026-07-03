@@ -304,3 +304,74 @@ function RegularDialog({
     </Dialog>
   );
 }
+
+/**
+ * Substitui o antigo status genérico "Em Busca" por um dropdown hierárquico
+ * (Macro-Origem → Macro-Próxima → Estadual) e expõe o Status de Transferência
+ * do paciente (Aguardando Transporte → Em Trânsito → Admitido no Destino).
+ */
+function BuscaTransferenciaControls({ solicitacao }: { solicitacao: Solicitacao }) {
+  const { atualizarEscopoBusca, atualizarStatusTransferencia } = useCore();
+  const escopoAtual: EscopoBusca = solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM";
+  const transferenciaAtual: StatusTransferencia =
+    solicitacao.statusTransferencia ?? "AGUARDANDO_TRANSPORTE";
+
+  return (
+    <div className="grid gap-3 rounded-md border bg-muted/30 p-3 md:grid-cols-2">
+      <div>
+        <Label className="mb-1 flex items-center gap-1.5 text-xs font-medium">
+          <Search className="h-3.5 w-3.5" /> Escopo de busca (hierárquico)
+        </Label>
+        <Select
+          value={escopoAtual}
+          onValueChange={(v) => {
+            try {
+              atualizarEscopoBusca(solicitacao.id, v as EscopoBusca);
+              toast.success("Escopo de busca atualizado.");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro");
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ESCOPOS_BUSCA.map((e) => (
+              <SelectItem key={e} value={e}>
+                {ESCOPO_BUSCA_LABEL[e]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label className="mb-1 flex items-center gap-1.5 text-xs font-medium">
+          <Truck className="h-3.5 w-3.5" /> Status de Transferência
+        </Label>
+        <Select
+          value={transferenciaAtual}
+          onValueChange={(v) => {
+            try {
+              atualizarStatusTransferencia(solicitacao.id, v as StatusTransferencia);
+              toast.success("Status de transferência atualizado.");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro");
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_TRANSFERENCIA_ORDEM.map((s) => (
+              <SelectItem key={s} value={s}>
+                {STATUS_TRANSFERENCIA_LABEL[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
