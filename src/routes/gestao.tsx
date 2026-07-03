@@ -13,7 +13,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { Clock, PercentCircle, BedDouble } from "lucide-react";
+import { Clock, PercentCircle, BedDouble, Network } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -24,7 +24,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCore } from "@/lib/core-store";
-import { HOSPITAIS_CREDENCIADOS } from "@/lib/core-types";
+import {
+  ESCOPOS_BUSCA,
+  ESCOPO_BUSCA_LABEL,
+  HOSPITAIS_CREDENCIADOS,
+  type EscopoBusca,
+} from "@/lib/core-types";
 import { chaveSemana, enriquecerSolicitacao } from "@/lib/utils";
 
 export const Route = createFileRoute("/gestao")({
@@ -60,14 +65,37 @@ function DashboardGestaoPage() {
   }, [enriquecidas]);
 
   const [semana, setSemana] = useState<string>("todas");
+  // Filtro estratificado por escopo hierárquico (Macro-Origem / Próxima / Estadual).
+  const [escopoFiltro, setEscopoFiltro] = useState<EscopoBusca | "todos">("todos");
 
-  const filtradas = useMemo(
-    () =>
+  const filtradas = useMemo(() => {
+    const porSemana =
       semana === "todas"
         ? enriquecidas
-        : enriquecidas.filter((s) => chaveSemana(s.criadoEm) === semana),
-    [enriquecidas, semana],
-  );
+        : enriquecidas.filter((s) => chaveSemana(s.criadoEm) === semana);
+    if (escopoFiltro === "todos") return porSemana;
+    // Uma solicitação entra no recorte se o escopo atual bate OU se possui
+    // qualquer histórico de contato no escopo escolhido.
+    return porSemana.filter(
+      (s) =>
+        s.escopoBuscaAtual === escopoFiltro ||
+        (s.historicoContatos ?? []).some((h) => h.escopoBusca === escopoFiltro),
+    );
+  }, [enriquecidas, semana, escopoFiltro]);
+
+  // Performance de Rede: taxa de recusa calculada a partir dos registros manuais
+  // de contato (funciona mesmo quando o hospital não tem login no sistema).
+  const performanceRede = useMemo(() => {
+    const contatos = filtradas
+      .flatMap((s) => s.historicoContatos ?? [])
+      .filter((h) => (escopoFiltro === "todos" ? true : h.escopoBusca === escopoFiltro));
+    const total = contatos.length;
+    const recusas = contatos.filter((c) => c.resultado === "RECUSA").length;
+    const aceites = contatos.filter((c) => c.resultado === "ACEITE").length;
+    const semResposta = contatos.filter((c) => c.resultado === "SEM_RESPOSTA").length;
+    const taxaRecusa = total ? Math.round((recusas / total) * 1000) / 10 : 0;
+    return { total, recusas, aceites, semResposta, taxaRecusa };
+  }, [filtradas, escopoFiltro]);
 
   // 1) Taxa de recusa por região (origem)
   const recusaPorRegiao = useMemo(() => {
@@ -142,22 +170,40 @@ function DashboardGestaoPage() {
             Indicadores semanais: recusa por região, tempo de resposta e mix de leitos.
           </p>
         </div>
-        <Select value={semana} onValueChange={setSemana}>
-          <SelectTrigger className="h-9 w-[200px]">
-            <SelectValue placeholder="Semana" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as semanas</SelectItem>
-            {semanas.map((w) => (
-              <SelectItem key={w} value={w}>
-                {w}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-end gap-2">
+          <Select
+            value={escopoFiltro}
+            onValueChange={(v) => setEscopoFiltro(v as EscopoBusca | "todos")}
+          >
+            <SelectTrigger className="h-9 w-[200px]">
+              <SelectValue placeholder="Escopo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os escopos</SelectItem>
+              {ESCOPOS_BUSCA.map((e) => (
+                <SelectItem key={e} value={e}>
+                  {ESCOPO_BUSCA_LABEL[e]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={semana} onValueChange={setSemana}>
+            <SelectTrigger className="h-9 w-[200px]">
+              <SelectValue placeholder="Semana" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as semanas</SelectItem>
+              {semanas.map((w) => (
+                <SelectItem key={w} value={w}>
+                  {w}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KPI
           icon={PercentCircle}
           label="Taxa de recusa global"
@@ -178,6 +224,13 @@ function DashboardGestaoPage() {
           value={String(distribuicaoTipo.length)}
           hint={`${distribuicaoTipo.reduce((a, b) => a + b.qtd, 0)} solicitações`}
           tone="primary"
+        />
+        <KPI
+          icon={Network}
+          label="Performance de Rede"
+          value={`${performanceRede.taxaRecusa}% recusa`}
+          hint={`${performanceRede.total} contatos • ${performanceRede.aceites} aceites • ${performanceRede.semResposta} sem resposta`}
+          tone="warning"
         />
       </div>
 

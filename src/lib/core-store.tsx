@@ -12,6 +12,12 @@ import {
   type CompraLeito,
   type EscolhaEnfermagem,
   type ProcessoSei,
+  type EscopoBusca,
+  type StatusTransferencia,
+  type HistoricoContato,
+  RESULTADO_CONTATO_LABEL,
+  STATUS_TRANSFERENCIA_LABEL,
+  ESCOPO_BUSCA_LABEL,
   GATILHOS_BYPASS_TRIAGEM,
 } from "./core-types";
 
@@ -315,6 +321,17 @@ interface CoreStore {
 
   // Compra direta por decreto de Autoridade Sanitária (RISCO_IMINENTE_MORTE)
   decretarCompraDireta: (solicitacaoId: string, justificativa: string) => void;
+
+  // Busca ativa estratificada + tentativas manuais de contato + transferência
+  atualizarEscopoBusca: (solicitacaoId: string, escopo: EscopoBusca) => void;
+  registrarContato: (
+    solicitacaoId: string,
+    contato: Omit<HistoricoContato, "id" | "registradoPorId" | "registradoPorNome">,
+  ) => void;
+  atualizarStatusTransferencia: (
+    solicitacaoId: string,
+    status: StatusTransferencia,
+  ) => void;
 }
 
 const Ctx = createContext<CoreStore | null>(null);
@@ -832,6 +849,78 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, logAudit],
   );
 
+  // ---- Busca ativa estratificada ----
+  const atualizarEscopoBusca: CoreStore["atualizarEscopoBusca"] = useCallback(
+    (id, escopo) => {
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (s.escopoBuscaAtual === escopo) return s;
+          logAudit({
+            solicitacaoId: id,
+            acao: "Alteração do escopo de busca",
+            detalhe: `${s.escopoBuscaAtual ? ESCOPO_BUSCA_LABEL[s.escopoBuscaAtual] : "—"} → ${ESCOPO_BUSCA_LABEL[escopo]}`,
+          });
+          return { ...s, escopoBuscaAtual: escopo };
+        }),
+      );
+    },
+    [logAudit],
+  );
+
+  // ---- Tentativas manuais de contato (Apoio Adm. Centralizado) ----
+  const registrarContato: CoreStore["registrarContato"] = useCallback(
+    (id, contato) => {
+      if (contato.resultado === "RECUSA" && !contato.justificativaRecusa?.trim()) {
+        throw new Error("Justificativa da recusa é obrigatória.");
+      }
+      if (!contato.hospitalNome.trim()) {
+        throw new Error("Informe o hospital de destino.");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          const registro: HistoricoContato = {
+            ...contato,
+            id: `hc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            registradoPorId: usuarioAtual.id,
+            registradoPorNome: usuarioAtual.nome,
+          };
+          logAudit({
+            solicitacaoId: id,
+            acao: "Registro de tentativa de contato com hospital",
+            detalhe: `${contato.hospitalNome} • ${RESULTADO_CONTATO_LABEL[contato.resultado]}${
+              contato.justificativaRecusa ? ` • ${contato.justificativaRecusa.slice(0, 80)}` : ""
+            }`,
+          });
+          return { ...s, historicoContatos: [...(s.historicoContatos ?? []), registro] };
+        }),
+      );
+    },
+    [usuarioAtual, logAudit],
+  );
+
+  // ---- Status de Transferência ----
+  const atualizarStatusTransferencia: CoreStore["atualizarStatusTransferencia"] = useCallback(
+    (id, status) => {
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (s.statusTransferencia === status) return s;
+          logAudit({
+            solicitacaoId: id,
+            acao: "Atualização de status de transferência",
+            detalhe: `${
+              s.statusTransferencia ? STATUS_TRANSFERENCIA_LABEL[s.statusTransferencia] : "—"
+            } → ${STATUS_TRANSFERENCIA_LABEL[status]}`,
+          });
+          return { ...s, statusTransferencia: status };
+        }),
+      );
+    },
+    [logAudit],
+  );
+
   const value: CoreStore = {
     usuarioAtual,
     usuarios: USUARIOS_MOCK,
@@ -853,6 +942,9 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     recusar,
     cancelarAbsorcaoSus,
     decretarCompraDireta,
+    atualizarEscopoBusca,
+    registrarContato,
+    atualizarStatusTransferencia,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
