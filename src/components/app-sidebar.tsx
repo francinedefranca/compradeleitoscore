@@ -34,6 +34,7 @@ interface NavItem {
 
 const navGeral: NavItem[] = [
   { title: "Painel Gerencial", url: "/dashboard", icon: LayoutDashboard, perfis: "todos" },
+  { title: "Dashboard de Gestão", url: "/gestao", icon: Activity, perfis: "todos" },
 ];
 
 const navModulos: NavItem[] = [

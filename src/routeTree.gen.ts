@@ -19,6 +19,7 @@ import { Route as AdministrativoRouteImport } from './routes/administrativo'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SolicitanteIndexRouteImport } from './routes/solicitante.index'
 import { Route as SolicitanteNovaRouteImport } from './routes/solicitante.nova'
+import { Route as DashboardGestaoRouteImport } from './routes/dashboard.gestao'
 
 const ReguladorRoute = ReguladorRouteImport.update({
   id: '/regulador',
@@ -70,16 +71,22 @@ const SolicitanteNovaRoute = SolicitanteNovaRouteImport.update({
   path: '/solicitante/nova',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardGestaoRoute = DashboardGestaoRouteImport.update({
+  id: '/gestao',
+  path: '/gestao',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/enfermeiro': typeof EnfermeiroRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
+  '/dashboard/gestao': typeof DashboardGestaoRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
   '/solicitante/': typeof SolicitanteIndexRoute
 }
@@ -88,10 +95,11 @@ export interface FileRoutesByTo {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/enfermeiro': typeof EnfermeiroRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
+  '/dashboard/gestao': typeof DashboardGestaoRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
   '/solicitante': typeof SolicitanteIndexRoute
 }
@@ -101,10 +109,11 @@ export interface FileRoutesById {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/enfermeiro': typeof EnfermeiroRoute
   '/prestadores': typeof PrestadoresRoute
   '/regulador': typeof ReguladorRoute
+  '/dashboard/gestao': typeof DashboardGestaoRoute
   '/solicitante/nova': typeof SolicitanteNovaRoute
   '/solicitante/': typeof SolicitanteIndexRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/enfermeiro'
     | '/prestadores'
     | '/regulador'
+    | '/dashboard/gestao'
     | '/solicitante/nova'
     | '/solicitante/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/enfermeiro'
     | '/prestadores'
     | '/regulador'
+    | '/dashboard/gestao'
     | '/solicitante/nova'
     | '/solicitante'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/enfermeiro'
     | '/prestadores'
     | '/regulador'
+    | '/dashboard/gestao'
     | '/solicitante/nova'
     | '/solicitante/'
   fileRoutesById: FileRoutesById
@@ -152,7 +164,7 @@ export interface RootRouteChildren {
   AdministrativoRoute: typeof AdministrativoRoute
   AuditoriaRoute: typeof AuditoriaRoute
   AutoridadeRoute: typeof AutoridadeRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   EnfermeiroRoute: typeof EnfermeiroRoute
   PrestadoresRoute: typeof PrestadoresRoute
   ReguladorRoute: typeof ReguladorRoute
@@ -232,15 +244,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SolicitanteNovaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/gestao': {
+      id: '/dashboard/gestao'
+      path: '/gestao'
+      fullPath: '/dashboard/gestao'
+      preLoaderRoute: typeof DashboardGestaoRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
+
+interface DashboardRouteChildren {
+  DashboardGestaoRoute: typeof DashboardGestaoRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardGestaoRoute: DashboardGestaoRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdministrativoRoute: AdministrativoRoute,
   AuditoriaRoute: AuditoriaRoute,
   AutoridadeRoute: AutoridadeRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   EnfermeiroRoute: EnfermeiroRoute,
   PrestadoresRoute: PrestadoresRoute,
   ReguladorRoute: ReguladorRoute,

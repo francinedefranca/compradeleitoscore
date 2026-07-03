@@ -27,7 +27,7 @@ import { useCore } from "@/lib/core-store";
 import { HOSPITAIS_CREDENCIADOS } from "@/lib/core-types";
 import { chaveSemana, enriquecerSolicitacao } from "@/lib/utils";
 
-export const Route = createFileRoute("/dashboard/gestao")({
+export const Route = createFileRoute("/gestao")({
   head: () => ({
     meta: [
       { title: "Dashboard de Gestão — CORE/MG" },
