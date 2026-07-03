@@ -380,12 +380,13 @@ const escopoSugerido = calcularEscopoSugerido(new Date(solicitacao.dataSolicitac
 const precisaAlerta = solicitacao.escopoBuscaAtual === 'Macro-Origem' && escopoSugerido !== 'Macro-Origem';
 
 return (
-  <div className={`card ${precisaAlerta ? 'border-red-500 bg-red-50' : ''}`}>
-    {precisaAlerta && (
-      <span className="text-red-600 font-bold">
+ <div className={`card ${precisaAlerta ? 'border-red-500 bg-red-50' : ''}`}>
+  {precisaAlerta && (
+    <div className="p-2">
+      <span className="text-red-600 font-bold text-xs">
         Alerta: Tempo de espera excedido (Sugerido: {escopoSugerido})
       </span>
-    )}
-    {/* ... resto do seu card ... */}
-  </div>
-);
+    </div>
+  )}
+  {/* ... resto do seu card ... */}
+</div>
