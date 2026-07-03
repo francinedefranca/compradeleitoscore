@@ -217,7 +217,7 @@ function RegularDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Regulação — {solicitacao.protocolo}</DialogTitle>
         </DialogHeader>
