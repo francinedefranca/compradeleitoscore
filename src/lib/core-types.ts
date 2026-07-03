@@ -378,7 +378,37 @@ export interface Solicitacao {
 
   // Multi-perfil segregation ledger — quem registrou o "esgotamento SUS" na fase 1
   registradoEsgotamentoPorId?: string;
+
+  // Governança CORE/MG — controles adicionais
+  /** Justificativa clínica/logística de transporte inter-hospitalar. */
+  justificativaTransporte?: string;
+  /** Checklist SEI consolidado (espelho dos flags de processoSei p/ relatórios). */
+  checklistSei?: {
+    laudo: boolean;
+    termoAcionamento: boolean;
+    termoEsgotamentoSus: boolean;
+  };
+
+  // Indicadores de gestão
+  /** Tempo total de resposta (solicitação → internação), em horas. */
+  tempoRespostaHoras?: number;
+  /** Macrorregião de origem do paciente (espelho de macrorregiaoOrigem). */
+  regiaoOrigem?: Macrorregiao;
+  /** Macrorregião do hospital executor (destino da compra). */
+  regiaoExecutora?: Macrorregiao;
+  /** true = aceite; false = recusa registrada pela ponta hospitalar. */
+  taxaAceiteRecusa?: boolean;
+  /** Tipo de leito efetivamente contratado. */
+  tipoLeito?: ClinicaMedica;
+
+  // Compra direta (decreto de Autoridade Sanitária em RISCO_IMINENTE_MORTE)
+  compraDireta?: {
+    decretadaPorId: string;
+    decretadaEm: string;
+    justificativa: string;
+  };
 }
+
 
 export interface RegistroAuditoria {
   id: string;
