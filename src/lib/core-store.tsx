@@ -777,7 +777,62 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, logAudit],
   );
 
-  const value: CoreStore = {
+  const decretarCompraDireta: CoreStore["decretarCompraDireta"] = useCallback(
+    (id, justificativa) => {
+      if (usuarioAtual.perfil !== "AUTORIDADE") {
+        throw new Error("Decreto de compra direta é exclusivo da Autoridade Sanitária.");
+      }
+      if (justificativa.trim().length < 15) {
+        throw new Error("Justificativa obrigatória (mín. 15 caracteres).");
+      }
+      setSolicitacoes((prev) =>
+        prev.map((s) => {
+          if (s.id !== id) return s;
+          if (s.gatilhoCompra !== "RISCO_IMINENTE_MORTE") {
+            throw new Error(
+              "Decreto de compra direta permitido apenas em RISCO_IMINENTE_MORTE.",
+            );
+          }
+          if (
+            s.status === "INTERNADO" ||
+            s.status === "PROCESSO_FINANCEIRO_EM_PAGAMENTO" ||
+            s.status === "AUTORIZADO_AUTORIDADE" ||
+            s.status === "RECUSADO" ||
+            s.status === "CANCELADO_ABSORVIDO_SUS"
+          ) {
+            throw new Error("Fase incompatível para decreto de compra direta.");
+          }
+          const termoNumero = `TA-DIR-${String(Date.now()).slice(-4)}`;
+          const emAt = nowIso();
+          logAudit({
+            solicitacaoId: id,
+            acao: "Decreto de COMPRA DIRETA (Risco Iminente de Morte)",
+            detalhe: `Bypass de triagens habituais • ${justificativa.slice(0, 140)}`,
+            statusAntes: s.status,
+            statusDepois: "AUTORIZADO_AUTORIDADE",
+          });
+          return {
+            ...s,
+            status: "AUTORIZADO_AUTORIDADE",
+            autorizacao: {
+              autoridadeId: usuarioAtual.id,
+              termoNumero,
+              observacoes: `COMPRA DIRETA — ${justificativa}`,
+              assinadoEm: emAt,
+            },
+            compraDireta: {
+              decretadaPorId: usuarioAtual.id,
+              decretadaEm: emAt,
+              justificativa,
+            },
+          };
+        }),
+      );
+    },
+    [usuarioAtual, logAudit],
+  );
+
+
     usuarioAtual,
     usuarios: USUARIOS_MOCK,
     solicitacoes,
