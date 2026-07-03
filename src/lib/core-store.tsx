@@ -832,7 +832,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, logAudit],
   );
 
-
+  const value: CoreStore = {
     usuarioAtual,
     usuarios: USUARIOS_MOCK,
     solicitacoes,
@@ -852,6 +852,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     enviarFaturasParaCompras,
     recusar,
     cancelarAbsorcaoSus,
+    decretarCompraDireta,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
