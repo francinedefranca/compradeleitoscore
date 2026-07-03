@@ -942,6 +942,9 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     recusar,
     cancelarAbsorcaoSus,
     decretarCompraDireta,
+    atualizarEscopoBusca,
+    registrarContato,
+    atualizarStatusTransferencia,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
