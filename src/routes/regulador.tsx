@@ -374,4 +374,18 @@ function BuscaTransferenciaControls({ solicitacao }: { solicitacao: Solicitacao 
       </div>
     </div>
   );
-}
+  }
+// Dentro do seu mapeamento de solicitações:
+const escopoSugerido = calcularEscopoSugerido(new Date(solicitacao.dataSolicitacao));
+const precisaAlerta = solicitacao.escopoBuscaAtual === 'Macro-Origem' && escopoSugerido !== 'Macro-Origem';
+
+return (
+  <div className={`card ${precisaAlerta ? 'border-red-500 bg-red-50' : ''}`}>
+    {precisaAlerta && (
+      <span className="text-red-600 font-bold">
+        Alerta: Tempo de espera excedido (Sugerido: {escopoSugerido})
+      </span>
+    )}
+    {/* ... resto do seu card ... */}
+  </div>
+);
