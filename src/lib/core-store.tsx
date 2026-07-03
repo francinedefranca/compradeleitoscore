@@ -12,6 +12,7 @@ import {
   type CompraLeito,
   type EscolhaEnfermagem,
   type ProcessoSei,
+  GATILHOS_BYPASS_TRIAGEM,
 } from "./core-types";
 
 // ---------- Datas fixas do seed (SSR/CSR safe) ----------
@@ -311,6 +312,9 @@ interface CoreStore {
   // Recusas e cancelamentos
   recusar: (solicitacaoId: string, motivo: string) => void;
   cancelarAbsorcaoSus: (solicitacaoId: string, justificativa: string) => void;
+
+  // Compra direta por decreto de Autoridade Sanitária (RISCO_IMINENTE_MORTE)
+  decretarCompraDireta: (solicitacaoId: string, justificativa: string) => void;
 }
 
 const Ctx = createContext<CoreStore | null>(null);
@@ -445,7 +449,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         prev.map((s) => {
           if (s.id !== id) return s;
 
-          const bypassJudicial = s.gatilhoCompra === "ORDEM_JUDICIAL_EXPIRADA";
+          const bypassJudicial = GATILHOS_BYPASS_TRIAGEM.includes(s.gatilhoCompra);
 
           // Trava 1: quem emitiu o parecer não pode assinar (salvo judicial)
           if (!bypassJudicial && s.parecer && s.parecer.reguladorId === usuarioAtual.id) {
