@@ -1,4 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/dashboard')({
+  component: DashboardGestaoPage, // Ou o nome correto da sua função
+})
 import { useMemo, useState } from "react";
 import {
   BarChart,
