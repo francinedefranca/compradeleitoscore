@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Stethoscope } from "lucide-react";
+import { AlertTriangle, Stethoscope, Truck, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,12 +32,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PerfilGate } from "@/components/perfil-gate";
+import { RegistroTentativaContato } from "@/components/registro-tentativa-contato";
 import { useCore } from "@/lib/core-store";
 import {
   CLINICAS,
+  ESCOPOS_BUSCA,
+  ESCOPO_BUSCA_LABEL,
   GRAVIDADE_META,
+  STATUS_TRANSFERENCIA_LABEL,
+  STATUS_TRANSFERENCIA_ORDEM,
   type ClinicaMedica,
+  type EscopoBusca,
   type Solicitacao,
+  type StatusTransferencia,
 } from "@/lib/core-types";
 import { formatDateTime, timeAgo } from "@/lib/formatters";
 import { StatusBadge } from "@/lib/status-badge";
