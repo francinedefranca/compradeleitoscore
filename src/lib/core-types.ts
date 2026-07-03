@@ -252,6 +252,57 @@ export const CRITERIO_DESEMPATE_LABEL: Record<CriterioDesempate, string> = {
   TIPO_LEITO_ADEQUADO: "Tipo de Leito Adequado",
 };
 
+// Escopo estratificado da busca ativa (substitui o antigo "Em Busca").
+export type EscopoBusca = "MACRO_ORIGEM" | "MACRO_PROXIMA" | "ESTADUAL";
+export const ESCOPO_BUSCA_LABEL: Record<EscopoBusca, string> = {
+  MACRO_ORIGEM: "Macro-Origem",
+  MACRO_PROXIMA: "Macro-Próxima",
+  ESTADUAL: "Estadual",
+};
+export const ESCOPOS_BUSCA: EscopoBusca[] = ["MACRO_ORIGEM", "MACRO_PROXIMA", "ESTADUAL"];
+
+// Etapas de transferência do paciente pós-confirmação de leito.
+export type StatusTransferencia =
+  | "AGUARDANDO_TRANSPORTE"
+  | "EM_TRANSITO"
+  | "ADMITIDO_DESTINO";
+export const STATUS_TRANSFERENCIA_LABEL: Record<StatusTransferencia, string> = {
+  AGUARDANDO_TRANSPORTE: "Aguardando Transporte",
+  EM_TRANSITO: "Em Trânsito",
+  ADMITIDO_DESTINO: "Admitido no Destino",
+};
+export const STATUS_TRANSFERENCIA_ORDEM: StatusTransferencia[] = [
+  "AGUARDANDO_TRANSPORTE",
+  "EM_TRANSITO",
+  "ADMITIDO_DESTINO",
+];
+
+// Histórico de tentativas manuais de contato com hospitais (Apoio Adm. Centralizado).
+export type CanalContato = "EMAIL" | "TELEFONE";
+export type ResultadoContato = "ACEITE" | "RECUSA" | "SEM_RESPOSTA";
+export const CANAL_CONTATO_LABEL: Record<CanalContato, string> = {
+  EMAIL: "E-mail",
+  TELEFONE: "Telefone",
+};
+export const RESULTADO_CONTATO_LABEL: Record<ResultadoContato, string> = {
+  ACEITE: "Aceite",
+  RECUSA: "Recusa",
+  SEM_RESPOSTA: "Sem Resposta",
+};
+
+export interface HistoricoContato {
+  id: string;
+  hospitalId?: string; // pode ser vazio: hospitais sem login também são registrados
+  hospitalNome: string;
+  dataHoraContato: string; // ISO
+  canal: CanalContato;
+  resultado: ResultadoContato;
+  justificativaRecusa?: string;
+  escopoBusca: EscopoBusca;
+  registradoPorId: string;
+  registradoPorNome: string;
+}
+
 export interface ParecerRegulador {
   reguladorId: string;
   vagaZeroTentada: boolean;
