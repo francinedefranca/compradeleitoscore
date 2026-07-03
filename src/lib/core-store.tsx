@@ -56,7 +56,12 @@ const seedSolicitacoes: Solicitacao[] = [
     checkTermoEsgotamentoSus: false,
     aceitesHospitais: [],
     faturasEnviadasCompras: false,
-    registradoEsgotamentoPorId: "u1",
+    registradoEsgotamentoPorId: "u1", 
+    escopoBuscaAtual: "MACRO_ORIGEM",
+
+statusTransferencia: "AGUARDANDO_TRANSPORTE",
+
+historicoContatos: [],
   },
   {
     id: "s2",
@@ -82,6 +87,11 @@ const seedSolicitacoes: Solicitacao[] = [
     aceitesHospitais: [],
     faturasEnviadasCompras: false,
     registradoEsgotamentoPorId: "u1",
+    escopoBuscaAtual: "MACRO_ORIGEM",
+
+statusTransferencia: "AGUARDANDO_TRANSPORTE",
+
+historicoContatos: [],
   },
   {
     id: "s3",
@@ -117,7 +127,12 @@ const seedSolicitacoes: Solicitacao[] = [
       clinicaIndicada: "UTI Pediátrica",
       emitidoEm: hoursAgo(10),
       checkTermoEsgotamentoSus: true,
-    },
+      escopoBuscaAtual: "MACRO_ORIGEM",
+
+statusTransferencia: "AGUARDANDO_TRANSPORTE",
+
+historicoContatos: [],
+        },
   },
   {
     id: "s4",
@@ -158,7 +173,7 @@ const seedSolicitacoes: Solicitacao[] = [
       termoNumero: "TA-2026-0018",
       observacoes: "Autorização emergencial, prazo máximo de acionamento 30 min.",
       assinadoEm: hoursAgo(20),
-    },
+          },
   },
   {
     id: "s5",
@@ -178,6 +193,11 @@ const seedSolicitacoes: Solicitacao[] = [
     justificativa: "UTI Trauma com suporte neurocirúrgico.",
     anexos: [],
     gatilhoCompra: "ESGOTAMENTO_CLINICO",
+    escopoBuscaAtual: "MACRO_ORIGEM",
+
+statusTransferencia: "AGUARDANDO_TRANSPORTE",
+
+historicoContatos: [],
     status: "INTERNADO",
     criadoEm: daysAgo(3),
     checkTermoEsgotamentoSus: true,
@@ -246,6 +266,11 @@ const seedSolicitacoes: Solicitacao[] = [
       clinicaIndicada: "UTI Adulto",
       emitidoEm: hoursAgo(6),
       checkTermoEsgotamentoSus: true,
+      escopoBuscaAtual: "MACRO_ORIGEM",
+
+statusTransferencia: "AGUARDANDO_TRANSPORTE",
+
+historicoContatos: [],
     },
   },
 ];
