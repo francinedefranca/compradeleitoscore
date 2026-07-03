@@ -48,14 +48,16 @@ export const Route = createFileRoute("/gestao")({
 
 const CORES = ["#2b60d9", "#3aa1d9", "#3fb08b", "#d99a2b", "#a54cd9", "#e26363"];
 
-function DashboardGestaoPage() {
+*/ function DashboardGestaoPage() {
   const { solicitacoes } = useCore();
 
   // Enriquecemos as solicitações usando o util (dado limpo → dashboard).
   const enriquecidas = useMemo(
     () => solicitacoes.map(enriquecerSolicitacao),
     [solicitacoes],
-  );
+  ); /* function DashboardGestaoPage() {
+  return <div>Teste de carregamento</div>;
+}
 
   // Estado global de filtro por semana (governança operacional).
   const semanas = useMemo(() => {
