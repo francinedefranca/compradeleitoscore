@@ -12,6 +12,12 @@ import {
   type CompraLeito,
   type EscolhaEnfermagem,
   type ProcessoSei,
+  type EscopoBusca,
+  type StatusTransferencia,
+  type HistoricoContato,
+  RESULTADO_CONTATO_LABEL,
+  STATUS_TRANSFERENCIA_LABEL,
+  ESCOPO_BUSCA_LABEL,
   GATILHOS_BYPASS_TRIAGEM,
 } from "./core-types";
 
