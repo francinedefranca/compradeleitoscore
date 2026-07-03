@@ -332,7 +332,7 @@ export interface EscolhaEnfermagem {
   criterioDesempateUtilizado: CriterioDesempate;
   justificativa: string;
   confirmadoEm: string;
-  escopoBusca: "MACRO" | "ESTADUAL";
+  escopoBusca: "MACRO" | "ESTADUAL" | EscopoBusca;
 }
 
 export interface ProcessoSei {
