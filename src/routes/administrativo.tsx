@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  BedDouble,
-  CheckCircle2,
-  FileText,
-  FolderPlus,
-  Send,
-} from "lucide-react";
+import { BedDouble, CheckCircle2, FileText, FolderPlus, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +64,7 @@ function AdministrativoPage() {
   const [faturaAberta, setFaturaAberta] = useState<Solicitacao | null>(null);
 
   return (
-    <PerfilGate permitido={["ADMINISTRATIVO"]}>
+    <PerfilGate permitido={["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]}>
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Setor de Compras / Contratos</h1>
@@ -122,7 +116,10 @@ function AdministrativoPage() {
                 })}
                 {confirmados.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="py-6 text-center text-sm text-muted-foreground"
+                    >
                       Nenhum caso aguardando SEI.
                     </TableCell>
                   </TableRow>
@@ -280,7 +277,9 @@ function AdministrativoPage() {
                     className="flex flex-wrap items-center justify-between gap-2 rounded border bg-card p-2"
                   >
                     <div>
-                      <div className="font-medium">{s.protocolo} — {s.pacienteNome}</div>
+                      <div className="font-medium">
+                        {s.protocolo} — {s.pacienteNome}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         SEI {s.numeroSeiProcesso ?? "—"} • enviado em{" "}
                         {s.envioFaturas && formatDateTime(s.envioFaturas.enviadoEm)}
@@ -446,8 +445,7 @@ function ComprarDialog({
             <strong>Paciente:</strong> {solicitacao.pacienteNome}
           </div>
           <div>
-            <strong>SEI:</strong>{" "}
-            <span className="font-mono">{solicitacao.numeroSeiProcesso}</span>
+            <strong>SEI:</strong> <span className="font-mono">{solicitacao.numeroSeiProcesso}</span>
           </div>
           <div>
             <strong>Hospital confirmado pela Enfermagem:</strong>{" "}
@@ -468,7 +466,11 @@ function ComprarDialog({
           </div>
           <div>
             <Label className="text-xs font-medium">Nº empenho / guia</Label>
-            <Input value={empenho} onChange={(e) => setEmpenho(e.target.value)} placeholder="EMP-…" />
+            <Input
+              value={empenho}
+              onChange={(e) => setEmpenho(e.target.value)}
+              placeholder="EMP-…"
+            />
           </div>
         </div>
         <div>
@@ -491,18 +493,13 @@ function ComprarDialog({
   );
 }
 
-function FaturaDialog({
-  solicitacao,
-  onClose,
-}: {
-  solicitacao: Solicitacao;
-  onClose: () => void;
-}) {
+function FaturaDialog({ solicitacao, onClose }: { solicitacao: Solicitacao; onClose: () => void }) {
   const { enviarFaturasParaCompras } = useCore();
   const [obs, setObs] = useState("");
 
   const enviar = () => {
-    if (obs.trim().length < 10) return toast.error("Descreva o conteúdo enviado (mín. 10 caracteres).");
+    if (obs.trim().length < 10)
+      return toast.error("Descreva o conteúdo enviado (mín. 10 caracteres).");
     try {
       enviarFaturasParaCompras(solicitacao.id, obs);
       toast.success("Faturas encaminhadas para auditoria e liquidação.");
