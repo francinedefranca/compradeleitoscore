@@ -87,16 +87,7 @@ export const USUARIOS_MOCK: Usuario[] = [
     email: "fabio@saude.mg.gov.br",
     senha: "core2026",
   },
-  {
-    id: "u7",
-    nome: "Gabriela Rocha",
-    cpf: "777.777.777-77",
-    matricula: "MG-1007",
-    perfil: "ADMINISTRATIVO_CORE",
-    unidade: "CORE/MG",
-    email: "gabriela@saude.mg.gov.br",
-    senha: "core2026",
-  },
+main
 ];
 
 // ---------- Macrorregiões / clínicas ----------
