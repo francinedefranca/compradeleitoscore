@@ -39,18 +39,14 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
 
   const [hospitalNome, setHospitalNome] = useState("");
   const [dataHora, setDataHora] = useState(() =>
-    new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-      .toISOString()
-      .slice(0, 16),
+ main
     new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16),
   );
   const [canal, setCanal] = useState<CanalContato>("TELEFONE");
   const [resultado, setResultado] = useState<ResultadoContato>("SEM_RESPOSTA");
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa>("SEM_LEITO_DISPONIVEL");
   const [justificativaRecusa, setJustificativaRecusa] = useState("");
-  const [escopo, setEscopo] = useState<EscopoBusca>(
-    solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM",
-  );
+ main
   const [escopo, setEscopo] = useState<EscopoBusca>(solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM");
 
   const salvar = () => {
@@ -60,8 +56,7 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
         dataHoraContato: new Date(dataHora).toISOString(),
         canal,
         resultado,
-        justificativaRecusa:
-          resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
+ main
         motivoRecusa: resultado === "RECUSA" ? motivoRecusa : undefined,
         justificativaRecusa: resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
         escopoBusca: escopo,
@@ -118,7 +113,7 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
                     <TableCell className="text-xs">{formatDateTime(h.dataHoraContato)}</TableCell>
                     <TableCell className="text-xs">{h.hospitalNome}</TableCell>
                     <TableCell className="text-xs">{ESCOPO_BUSCA_LABEL[h.escopoBusca]}</TableCell>
-                    <TableCell className="text-xs">{RESULTADO_CONTATO_LABEL[h.resultado]}</TableCell>
+ main
                     <TableCell className="text-xs">
                       {RESULTADO_CONTATO_LABEL[h.resultado]}
                     </TableCell>
@@ -126,7 +121,7 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-xs">Nenhum contato registrado.</TableCell>
+ main
                   <TableCell colSpan={4} className="text-center text-xs">
                     Nenhum contato registrado.
                   </TableCell>

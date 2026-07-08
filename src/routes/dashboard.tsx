@@ -20,6 +20,7 @@ import {
   DollarSign,
   Building2,
   ShieldAlert,
+  RefreshCw,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCore } from "@/lib/core-store";
-import { CLINICAS, HOSPITAIS_CREDENCIADOS } from "@/lib/core-types";
+import { CLINICAS, HOSPITAIS_CREDENCIADOS, MOTIVO_RECUSA_LABEL } from "@/lib/core-types";
 import { formatCurrency } from "@/lib/formatters";
 import { StatusBadge } from "@/lib/status-badge";
 
@@ -104,9 +105,23 @@ function DashboardPage() {
     return Array.from(m.values()).sort((a, b) => b.qtd - a.qtd);
   }, [compradas]);
 
-  const pendentes = filtradas.filter(
-    (s) => s.status !== "INTERNADO" && s.status !== "RECUSADO",
+  const pendentes = filtradas.filter((s) => s.status !== "INTERNADO" && s.status !== "RECUSADO");
+  const recusas = filtradas.flatMap((s) =>
+    (s.historicoContatos ?? []).filter((c) => c.resultado === "RECUSA"),
   );
+  const repescagensPendentes = filtradas.flatMap((s) =>
+    (s.historicoContatos ?? []).filter((c) => c.reacionarHospital && !c.repescagemRealizada),
+  );
+  const motivosRecusa = Array.from(
+    recusas.reduce((acc, c) => {
+      const motivo = c.motivoRecusa ?? "OUTRO";
+      acc.set(motivo, (acc.get(motivo) ?? 0) + 1);
+      return acc;
+    }, new Map<string, number>()),
+  ).map(([motivo, qtd]) => ({
+    motivo: MOTIVO_RECUSA_LABEL[motivo as keyof typeof MOTIVO_RECUSA_LABEL],
+    qtd,
+  }));
 
   return (
     <div className="space-y-6">
@@ -187,6 +202,13 @@ function DashboardPage() {
           hint="Fila do Regulador"
           tone="warning"
         />
+        <KPI
+          icon={RefreshCw}
+          label="Repescagens pendentes"
+          value={String(repescagensPendentes.length)}
+          hint={`${recusas.length} recusas registradas`}
+          tone="info"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -242,6 +264,27 @@ function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Motivos de recusa da rede credenciada</CardTitle>
+        </CardHeader>
+        <CardContent className="h-72">
+          {motivosRecusa.length === 0 ? (
+            <EmptyChart />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={motivosRecusa} layout="vertical" margin={{ left: 120 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" allowDecimals={false} fontSize={11} />
+                <YAxis type="category" dataKey="motivo" fontSize={11} width={120} />
+                <Tooltip />
+                <Bar dataKey="qtd" fill="var(--color-primary)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

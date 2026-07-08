@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { PerfilGate } from "@/components/perfil-gate";
 import { useCore } from "@/lib/core-store";
-import { USUARIOS_MOCK, type Solicitacao } from "@/lib/core-types";
+import { GRAVIDADE_META, USUARIOS_MOCK, type Solicitacao } from "@/lib/core-types";
 import { formatDateTime } from "@/lib/formatters";
 
 export const Route = createFileRoute("/autoridade")({
@@ -45,7 +45,9 @@ function AutoridadePage() {
     <PerfilGate permitido={["AUTORIDADE"]}>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Homologação de Compra Extraordinária</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Homologação de Compra Extraordinária
+          </h1>
           <p className="text-sm text-muted-foreground">
             Assinatura eletrônica do Termo de Acionamento pela Autoridade Sanitária.
           </p>
@@ -96,7 +98,10 @@ function AutoridadePage() {
                 })}
                 {fila.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       Nenhum parecer aguardando homologação.
                     </TableCell>
                   </TableRow>
@@ -122,6 +127,8 @@ function HomologarDialog({
   const { autorizarCompra } = useCore();
   const [obs, setObs] = useState("");
   const regulador = USUARIOS_MOCK.find((u) => u.id === solicitacao.parecer?.reguladorId);
+  const solicitante = USUARIOS_MOCK.find((u) => u.id === solicitacao.solicitanteId);
+  const gravidade = GRAVIDADE_META[solicitacao.gravidade];
 
   const assinar = () => {
     try {
@@ -140,27 +147,71 @@ function HomologarDialog({
           <DialogTitle>Termo de Acionamento — {solicitacao.protocolo}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 rounded-md border bg-card p-4 text-sm">
-          <div>
-            <div className="text-xs text-muted-foreground">Paciente</div>
-            <div className="font-medium">{solicitacao.pacienteNome} • CPF {solicitacao.pacienteCpf}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Clínica indicada</div>
-            <div className="font-medium">{solicitacao.parecer?.clinicaIndicada}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Parecer técnico</div>
-            <div>{solicitacao.parecer?.parecerTecnico}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Vaga Zero</div>
-            <div>{solicitacao.parecer?.vagaZeroDetalhe || "—"}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Emitido por</div>
-            <div>{regulador?.nome} • CPF {regulador?.cpf}</div>
-          </div>
+        <div className="space-y-4 rounded-md border bg-card p-4 text-sm">
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Dados do solicitante e da origem</h3>
+            <div className="grid gap-3 md:grid-cols-2">
+              <CampoRotulado label="Solicitante" valor={solicitante?.nome ?? "—"} />
+              <CampoRotulado label="Unidade de origem" valor={solicitacao.unidadeOrigem} />
+              <CampoRotulado label="Município de origem" valor={solicitacao.municipioOrigem} />
+              <CampoRotulado label="Macrorregião PDR" valor={solicitacao.macrorregiaoOrigem} />
+            </div>
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">
+              Dados do paciente exibidos ao solicitante
+            </h3>
+            <div className="grid gap-3 md:grid-cols-2">
+              <CampoRotulado label="Paciente" valor={solicitacao.pacienteNome} />
+              <CampoRotulado label="CPF" valor={solicitacao.pacienteCpf} />
+              <CampoRotulado label="CNS" valor={solicitacao.pacienteCns} />
+              <CampoRotulado label="Nascimento" valor={solicitacao.pacienteNascimento} />
+            </div>
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Dados clínico-regulatórios</h3>
+            <div className="grid gap-3 md:grid-cols-2">
+              <CampoRotulado label="Gravidade" valor={gravidade.label} />
+              <CampoRotulado label="Diagnóstico" valor={solicitacao.diagnosticoPrincipal} />
+              <CampoRotulado label="CID" valor={solicitacao.cid} />
+              <CampoRotulado
+                label="Tipo de leito indicado"
+                valor={solicitacao.parecer?.clinicaIndicada ?? "—"}
+              />
+              <CampoRotulado
+                label="Sinais vitais"
+                valor={`PA ${solicitacao.sinaisVitais.pa}; FC ${solicitacao.sinaisVitais.fc}; FR ${solicitacao.sinaisVitais.fr}; SpO2 ${solicitacao.sinaisVitais.spo2}; T ${solicitacao.sinaisVitais.temp}`}
+              />
+              <CampoRotulado
+                label="Justificativa do solicitante"
+                valor={solicitacao.justificativa}
+              />
+            </div>
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Parecer do médico regulador</h3>
+            <div className="grid gap-3 md:grid-cols-2">
+              <CampoRotulado
+                label="Parecer técnico"
+                valor={solicitacao.parecer?.parecerTecnico ?? "—"}
+              />
+              <CampoRotulado
+                label="Vaga Zero / esgotamento SUS"
+                valor={solicitacao.parecer?.vagaZeroDetalhe || "—"}
+              />
+              <CampoRotulado
+                label="Regulador"
+                valor={`${regulador?.nome ?? "—"} • CPF ${regulador?.cpf ?? "—"}`}
+              />
+              <CampoRotulado
+                label="Data do parecer"
+                valor={solicitacao.parecer ? formatDateTime(solicitacao.parecer.emitidoEm) : "—"}
+              />
+            </div>
+          </section>
         </div>
 
         <div>
@@ -169,17 +220,28 @@ function HomologarDialog({
         </div>
 
         <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
-          Ao clicar em "Assinar", será gerado o Termo de Acionamento com carimbo digital
-          contendo seu CPF, data e hora.
+          Ao clicar em "Assinar", será gerado o Termo de Acionamento com carimbo digital contendo
+          seu CPF, data e hora.
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button onClick={assinar}>
             <ShieldCheck className="h-4 w-4" /> Assinar Termo de Acionamento
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CampoRotulado({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{valor}</div>
+    </div>
   );
 }
