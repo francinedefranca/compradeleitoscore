@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   FileText,
   Stethoscope,
-  ShieldCheck,
   Briefcase,
   History,
   Building2,
@@ -33,21 +32,47 @@ interface NavItem {
 }
 
 const navGeral: NavItem[] = [
-  { title: "Painel Gerencial", url: "/dashboard", icon: LayoutDashboard, perfis: "todos" },
-  { title: "Dashboard de Gestão", url: "/gestao", icon: Activity, perfis: "todos" },
+  { title: "Painel Operacional", url: "/", icon: LayoutDashboard, perfis: "todos" },
+  { title: "Painel Gerencial", url: "/dashboard", icon: Activity, perfis: "todos" },
 ];
 
 const navModulos: NavItem[] = [
-  { title: "Minhas Solicitações", url: "/solicitante", icon: FileText, perfis: ["SOLICITANTE"] },
-  { title: "Nova Solicitação", url: "/solicitante/nova", icon: Activity, perfis: ["SOLICITANTE"] },
-  { title: "Fila de Regulação", url: "/regulador", icon: Stethoscope, perfis: ["REGULADOR"] },
-  { title: "Homologação", url: "/autoridade", icon: ShieldCheck, perfis: ["AUTORIDADE"] },
-  { title: "Enfermagem Navegadora", url: "/enfermeiro", icon: Search, perfis: ["ENFERMEIRO"] },
-  { title: "Administrativo / SEI", url: "/administrativo", icon: Briefcase, perfis: ["ADMINISTRATIVO"] },
+  {
+    title: "Triagem",
+    url: "/regulador",
+    icon: Stethoscope,
+    perfis: ["REGULADOR", "AUTORIDADE", "GESTAO"],
+  },
+  { title: "Casos", url: "/dashboard", icon: FileText, perfis: "todos" },
+  {
+    title: "Busca na Rede Credenciada",
+    url: "/enfermeiro",
+    icon: Search,
+    perfis: ["ENFERMEIRO", "GESTAO"],
+  },
+  {
+    title: "Administrativo / SEI",
+    url: "/administrativo",
+    icon: Briefcase,
+    perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
+  },
+  {
+    title: "Cadastrar Caso",
+    url: "/solicitante/nova",
+    icon: Activity,
+    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"],
+  },
+  {
+    title: "Casos Cadastrados",
+    url: "/solicitante",
+    icon: FileText,
+    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE", "GESTAO"],
+  },
 ];
 
 const navSuporte: NavItem[] = [
-  { title: "Prestadores Credenciados", url: "/prestadores", icon: Building2, perfis: "todos" },
+  { title: "Hospitais Credenciados", url: "/prestadores", icon: Building2, perfis: "todos" },
+  { title: "POP", url: "/auditoria", icon: History, perfis: "todos" },
   { title: "Log de Auditoria", url: "/auditoria", icon: History, perfis: "todos" },
 ];
 
@@ -92,9 +117,7 @@ export function AppSidebar() {
           </div>
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold text-sidebar-foreground">CORE / MG</div>
-            <div className="truncate text-[11px] text-sidebar-foreground/70">
-              Compra de Leitos
-            </div>
+            <div className="truncate text-[11px] text-sidebar-foreground/70">Compra de Leitos</div>
           </div>
         </div>
       </SidebarHeader>

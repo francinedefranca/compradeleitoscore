@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import {
   USUARIOS_MOCK,
   type Anexo,
@@ -18,6 +11,7 @@ import {
   type GatilhoCompra,
   type HistoricoContato,
   type Macrorregiao,
+  type MotivoRecusa,
   type ParecerRegulador,
   type PerfilId,
   type RegistroAuditoria,
@@ -35,16 +29,18 @@ const nowIso = () => new Date().toISOString();
 const hoursAgo = (h: number) => new Date(SEED_NOW - h * 3600_000).toISOString();
 const uid = (p: string) => `${p}-${Math.random().toString(36).slice(2, 10)}`;
 
-let PROTOCOLO_SEQ = 1000;
-const proximoProtocolo = () => `CORE-${String(++PROTOCOLO_SEQ).padStart(6, "0")}`;
+let PROTOCOLO_SEQ = 153;
+const proximoProtocolo = () =>
+  `CL-${new Date().getFullYear()}-${String(++PROTOCOLO_SEQ).padStart(6, "0")}`;
 
 // ---------- seed ----------
 const seedSolicitacoes: Solicitacao[] = [
   {
     id: "s1",
     protocolo: proximoProtocolo(),
-    solicitanteId: "u1",
+    solicitanteId: "u2",
     unidadeOrigem: "HPS João XXIII",
+    cnesUnidadeOrigem: "0027049",
     macrorregiaoOrigem: "Centro",
     municipioOrigem: "Belo Horizonte",
     pacienteNome: "Maria Aparecida da Silva",
@@ -102,9 +98,13 @@ interface CoreStore {
       canal: CanalContato;
       resultado: ResultadoContato;
       justificativaRecusa?: string;
+      motivoRecusa?: MotivoRecusa;
       escopoBusca: EscopoBusca;
+      reacionarHospital?: boolean;
+      repescagemEm?: string;
     },
   ) => void;
+  marcarRepescagemRealizada: (id: string, contatoId: string) => void;
   iniciarBuscaMacro: (id: string) => void;
   registrarAceite: (id: string, hospitalId: string, vagas: number) => void;
   expandirParaEstadual: (id: string) => void;
@@ -138,6 +138,8 @@ export interface NovaSolicitacaoInput {
   pacienteNascimento: string;
   macrorregiaoOrigem: Macrorregiao;
   municipioOrigem: string;
+  unidadeOrigem: string;
+  cnesUnidadeOrigem: string;
   diagnosticoPrincipal: string;
   cid: string;
   gravidade: Gravidade;
@@ -151,7 +153,7 @@ export interface NovaSolicitacaoInput {
 const Ctx = createContext<CoreStore | null>(null);
 
 export function CoreProvider({ children }: { children: ReactNode }) {
-  const [usuarioAtualId, setUsuarioAtualId] = useState<string>("u1");
+  const [usuarioAtualId, setUsuarioAtualId] = useState<string>("u2");
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>(seedSolicitacoes);
   const [auditoria, setAuditoria] = useState<RegistroAuditoria[]>([]);
 
@@ -169,8 +171,8 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       statusDepois?: StatusSolicitacao;
       quemId?: string;
     }) => {
-      const quem = USUARIOS_MOCK.find((u) => u.id === (entry.quemId ?? usuarioAtualId))
-        ?? usuarioAtual;
+      const quem =
+        USUARIOS_MOCK.find((u) => u.id === (entry.quemId ?? usuarioAtualId)) ?? usuarioAtual;
       setAuditoria((prev) => [
         ...prev,
         {
@@ -191,12 +193,9 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [usuarioAtual, usuarioAtualId],
   );
 
-  const patch = useCallback(
-    (id: string, updater: (s: Solicitacao) => Solicitacao) => {
-      setSolicitacoes((prev) => prev.map((s) => (s.id === id ? updater(s) : s)));
-    },
-    [],
-  );
+  const patch = useCallback((id: string, updater: (s: Solicitacao) => Solicitacao) => {
+    setSolicitacoes((prev) => prev.map((s) => (s.id === id ? updater(s) : s)));
+  }, []);
 
   const requirePerfil = (esperado: PerfilId | PerfilId[]) => {
     const lista = Array.isArray(esperado) ? esperado : [esperado];
@@ -218,12 +217,13 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const criarSolicitacao: CoreStore["criarSolicitacao"] = useCallback(
     (data) => {
-      requirePerfil("SOLICITANTE");
+      requirePerfil(["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"]);
       const nova: Solicitacao = {
         id: uid("s"),
         protocolo: proximoProtocolo(),
         solicitanteId: usuarioAtual.id,
-        unidadeOrigem: usuarioAtual.unidade,
+        unidadeOrigem: data.unidadeOrigem,
+        cnesUnidadeOrigem: data.cnesUnidadeOrigem,
         macrorregiaoOrigem: data.macrorregiaoOrigem,
         municipioOrigem: data.municipioOrigem,
         pacienteNome: data.pacienteNome,
@@ -248,7 +248,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       };
       setSolicitacoes((p) => [nova, ...p]);
       logAudit({
-        acao: "Solicitação criada",
+        acao: "Caso de compra excepcional cadastrado",
         solicitacaoId: nova.id,
         statusDepois: nova.status,
         detalhe: `${nova.diagnosticoPrincipal} (${nova.cid})`,
@@ -288,7 +288,12 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     (id, motivo) => {
       requirePerfil("REGULADOR");
       patch(id, (s) => ({ ...s, status: "RECUSADO" }));
-      logAudit({ acao: "Solicitação recusada", detalhe: motivo, solicitacaoId: id, statusDepois: "RECUSADO" });
+      logAudit({
+        acao: "Solicitação recusada",
+        detalhe: motivo,
+        solicitacaoId: id,
+        statusDepois: "RECUSADO",
+      });
     },
     [logAudit, patch],
   );
@@ -315,7 +320,15 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const atualizarEscopoBusca: CoreStore["atualizarEscopoBusca"] = useCallback(
     (id, escopo) => {
-      patch(id, (s) => ({ ...s, escopoBuscaAtual: escopo }));
+      patch(id, (s) => {
+        const temAceiteMacrorregional = s.aceitesHospitais.some(
+          (a) => (a.escopoBusca ?? "MACRO_ORIGEM") !== "ESTADUAL",
+        );
+        if (escopo === "ESTADUAL" && temAceiteMacrorregional) {
+          throw new Error("Busca estadual bloqueada: já houve aceite na macrorregião PDR.");
+        }
+        return { ...s, escopoBuscaAtual: escopo };
+      });
       logAudit({ acao: "Escopo de busca atualizado", detalhe: escopo, solicitacaoId: id });
     },
     [logAudit, patch],
@@ -335,15 +348,22 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       if (contato.resultado === "RECUSA" && !contato.justificativaRecusa?.trim()) {
         throw new Error("Justificativa é obrigatória para recusas.");
       }
+      if (contato.resultado === "RECUSA" && !contato.motivoRecusa) {
+        throw new Error("Motivo padronizado é obrigatório para recusas.");
+      }
       const novo: HistoricoContato = {
         id: uid("hc"),
         hospitalNome: contato.hospitalNome,
         dataHoraContato: contato.dataHoraContato,
         canal: contato.canal,
         resultado: contato.resultado,
+        motivoRecusa: contato.motivoRecusa,
         justificativaRecusa: contato.justificativaRecusa,
         escopoBusca: contato.escopoBusca,
         registradoPorId: usuarioAtual.id,
+        reacionarHospital: contato.reacionarHospital,
+        repescagemEm: contato.repescagemEm,
+        repescagemRealizada: false,
       };
       patch(id, (s) => ({
         ...s,
@@ -358,6 +378,20 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [logAudit, patch, usuarioAtual],
   );
 
+  const marcarRepescagemRealizada: CoreStore["marcarRepescagemRealizada"] = useCallback(
+    (id, contatoId) => {
+      requirePerfil("ENFERMEIRO");
+      patch(id, (s) => ({
+        ...s,
+        historicoContatos: (s.historicoContatos ?? []).map((c) =>
+          c.id === contatoId ? { ...c, repescagemRealizada: true } : c,
+        ),
+      }));
+      logAudit({ acao: "Repescagem realizada", solicitacaoId: id, detalhe: contatoId });
+    },
+    [logAudit, patch],
+  );
+
   const iniciarBuscaMacro: CoreStore["iniciarBuscaMacro"] = useCallback(
     (id) => {
       requirePerfil("ENFERMEIRO");
@@ -366,7 +400,11 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         buscaIniciadaEm: nowIso(),
         status: "BUSCA_MACRO_REGIONAL",
       }));
-      logAudit({ acao: "Busca macrorregional iniciada", solicitacaoId: id, statusDepois: "BUSCA_MACRO_REGIONAL" });
+      logAudit({
+        acao: "Busca macrorregional iniciada",
+        solicitacaoId: id,
+        statusDepois: "BUSCA_MACRO_REGIONAL",
+      });
     },
     [logAudit, patch],
   );
@@ -378,7 +416,12 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         ...s,
         aceitesHospitais: [
           ...s.aceitesHospitais,
-          { hospitalId, vagasDisponiveis: vagas, aceitoEm: nowIso() },
+          {
+            hospitalId,
+            vagasDisponiveis: vagas,
+            aceitoEm: nowIso(),
+            escopoBusca: s.escopoBuscaAtual ?? "MACRO_ORIGEM",
+          },
         ],
       }));
       logAudit({ acao: "Aceite de hospital registrado", detalhe: hospitalId, solicitacaoId: id });
@@ -389,8 +432,20 @@ export function CoreProvider({ children }: { children: ReactNode }) {
   const expandirParaEstadual: CoreStore["expandirParaEstadual"] = useCallback(
     (id) => {
       requirePerfil("ENFERMEIRO");
-      patch(id, (s) => ({ ...s, status: "BUSCA_ESTADUAL_EXPANDIDA" }));
-      logAudit({ acao: "Busca expandida para estadual", solicitacaoId: id, statusDepois: "BUSCA_ESTADUAL_EXPANDIDA" });
+      patch(id, (s) => {
+        const temAceiteMacrorregional = s.aceitesHospitais.some(
+          (a) => (a.escopoBusca ?? "MACRO_ORIGEM") !== "ESTADUAL",
+        );
+        if (temAceiteMacrorregional) {
+          throw new Error("Expansão estadual bloqueada: já houve aceite na macrorregião.");
+        }
+        return { ...s, status: "BUSCA_ESTADUAL_EXPANDIDA", escopoBuscaAtual: "ESTADUAL" };
+      });
+      logAudit({
+        acao: "Busca expandida para estadual",
+        solicitacaoId: id,
+        statusDepois: "BUSCA_ESTADUAL_EXPANDIDA",
+      });
     },
     [logAudit, patch],
   );
@@ -427,7 +482,11 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         confirmadoEm: nowIso(),
         enfermeiroId: usuarioAtual.id,
       };
-      patch(id, (s) => ({ ...s, escolhaEnfermagem: escolha, status: "LEITO_CONFIRMADO_ENFERMAGEM" }));
+      patch(id, (s) => ({
+        ...s,
+        escolhaEnfermagem: escolha,
+        status: "LEITO_CONFIRMADO_ENFERMAGEM",
+      }));
       logAudit({
         acao: "Leito confirmado pela enfermagem",
         detalhe: dados.hospitalId,
@@ -550,6 +609,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     atualizarEscopoBusca,
     atualizarStatusTransferencia,
     registrarContato,
+    marcarRepescagemRealizada,
     iniciarBuscaMacro,
     registrarAceite,
     expandirParaEstadual,

@@ -19,12 +19,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCore } from "@/lib/core-store";
-import { GRAVIDADE_META, MACRORREGIOES, type Anexo, type Gravidade, type Macrorregiao } from "@/lib/core-types";
+import {
+  GRAVIDADE_META,
+  MACRORREGIOES,
+  type Anexo,
+  type Gravidade,
+  type Macrorregiao,
+} from "@/lib/core-types";
 import { maskCns, maskCpf } from "@/lib/formatters";
 import { PerfilGate } from "@/components/perfil-gate";
 
 export const Route = createFileRoute("/solicitante/nova")({
-  head: () => ({ meta: [{ title: "Nova Solicitação — CORE/MG" }] }),
+  head: () => ({ meta: [{ title: "Cadastrar caso de compra — CORE/MG" }] }),
   component: NovaSolicitacao,
 });
 
@@ -35,6 +41,8 @@ const schema = z.object({
   pacienteNascimento: z.string().min(10, "Data obrigatória"),
   macrorregiaoOrigem: z.string().min(1),
   municipioOrigem: z.string().trim().min(2).max(80),
+  unidadeOrigem: z.string().trim().min(3, "Informe a unidade solicitante").max(120),
+  cnesUnidadeOrigem: z.string().trim().min(3, "Informe o CNES da unidade").max(20),
   diagnosticoPrincipal: z.string().trim().min(5).max(200),
   cid: z.string().trim().min(2).max(10),
   gravidade: z.enum(["VERMELHO", "LARANJA", "AMARELO", "VERDE"]),
@@ -58,6 +66,8 @@ function NovaSolicitacao() {
     defaultValues: {
       gravidade: "LARANJA",
       macrorregiaoOrigem: "Centro",
+      unidadeOrigem: "",
+      cnesUnidadeOrigem: "",
     },
   });
 
@@ -81,42 +91,57 @@ function NovaSolicitacao() {
         pacienteNascimento: data.pacienteNascimento,
         macrorregiaoOrigem: data.macrorregiaoOrigem as Macrorregiao,
         municipioOrigem: data.municipioOrigem,
+        unidadeOrigem: data.unidadeOrigem,
+        cnesUnidadeOrigem: data.cnesUnidadeOrigem,
         diagnosticoPrincipal: data.diagnosticoPrincipal,
         cid: data.cid.toUpperCase(),
         gravidade: data.gravidade as Gravidade,
         justificativa: data.justificativa,
         sinaisVitais: {
-          pa: data.pa, fc: data.fc, fr: data.fr, temp: data.temp, spo2: data.spo2, glasgow: data.glasgow,
+          pa: data.pa,
+          fc: data.fc,
+          fr: data.fr,
+          temp: data.temp,
+          spo2: data.spo2,
+          glasgow: data.glasgow,
         },
         anexos,
         gatilhoCompra: "ESGOTAMENTO_CLINICO",
         checkTermoEsgotamentoSus: false,
       });
-      toast.success(`Solicitação ${nova.protocolo} enviada à Regulação.`);
-      navigate({ to: "/solicitante" });
+      toast.success(`Caso ${nova.protocolo} cadastrado para fluxo interno da CORE.`);
+      navigate({ to: "/regulador" });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao criar solicitação");
+      toast.error(e instanceof Error ? e.message : "Erro ao cadastrar caso");
     }
   };
 
   return (
-    <PerfilGate permitido={["SOLICITANTE"]}>
+    <PerfilGate permitido={["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"]}>
       <div className="mx-auto max-w-4xl space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Nova Solicitação de Leito</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Cadastrar caso de compra excepcional
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Cadastro de paciente em urgência/emergência para regulação pela CORE/MG.
+            Cadastro interno após o médico regulador ou a autoridade sanitária identificar, na
+            ferramenta estadual, hipótese excepcional de compra de leito.
           </p>
         </div>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Identificação do Paciente</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Identificação do Paciente</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <Field label="Nome completo" error={form.formState.errors.pacienteNome?.message}>
                 <Input {...form.register("pacienteNome")} />
               </Field>
-              <Field label="Data de nascimento" error={form.formState.errors.pacienteNascimento?.message}>
+              <Field
+                label="Data de nascimento"
+                error={form.formState.errors.pacienteNascimento?.message}
+              >
                 <Input type="date" {...form.register("pacienteNascimento")} />
               </Field>
               <Field label="CPF" error={form.formState.errors.pacienteCpf?.message}>
@@ -137,29 +162,57 @@ function NovaSolicitacao() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Origem</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Origem e unidade solicitante</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <Field label="Macrorregião de origem">
                 <Select
                   value={form.watch("macrorregiaoOrigem")}
                   onValueChange={(v) => form.setValue("macrorregiaoOrigem", v)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {MACRORREGIOES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    {MACRORREGIOES.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Município de origem" error={form.formState.errors.municipioOrigem?.message}>
+              <Field
+                label="Município de origem"
+                error={form.formState.errors.municipioOrigem?.message}
+              >
                 <Input {...form.register("municipioOrigem")} />
+              </Field>
+              <Field
+                label="Unidade solicitante / origem"
+                error={form.formState.errors.unidadeOrigem?.message}
+              >
+                <Input {...form.register("unidadeOrigem")} placeholder="Ex.: HPS João XXIII" />
+              </Field>
+              <Field
+                label="CNES da unidade"
+                error={form.formState.errors.cnesUnidadeOrigem?.message}
+              >
+                <Input {...form.register("cnesUnidadeOrigem")} placeholder="Ex.: 0027049" />
               </Field>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Quadro Clínico</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Quadro Clínico</CardTitle>
+            </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <Field label="Diagnóstico principal" error={form.formState.errors.diagnosticoPrincipal?.message}>
+              <Field
+                label="Diagnóstico principal"
+                error={form.formState.errors.diagnosticoPrincipal?.message}
+              >
                 <Input {...form.register("diagnosticoPrincipal")} />
               </Field>
               <Field label="CID" error={form.formState.errors.cid?.message}>
@@ -170,7 +223,9 @@ function NovaSolicitacao() {
                   value={form.watch("gravidade")}
                   onValueChange={(v) => form.setValue("gravidade", v as Gravidade)}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {(Object.keys(GRAVIDADE_META) as Gravidade[]).map((g) => (
                       <SelectItem key={g} value={g}>
@@ -184,16 +239,31 @@ function NovaSolicitacao() {
               <div className="md:col-span-2">
                 <Label className="mb-2 block text-sm font-medium">Sinais Vitais</Label>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
-                  <Field label="PA"><Input {...form.register("pa")} placeholder="120/80" /></Field>
-                  <Field label="FC"><Input {...form.register("fc")} placeholder="bpm" /></Field>
-                  <Field label="FR"><Input {...form.register("fr")} placeholder="rpm" /></Field>
-                  <Field label="Temp."><Input {...form.register("temp")} placeholder="°C" /></Field>
-                  <Field label="SpO₂"><Input {...form.register("spo2")} placeholder="%" /></Field>
-                  <Field label="Glasgow"><Input {...form.register("glasgow")} placeholder="opcional" /></Field>
+                  <Field label="PA">
+                    <Input {...form.register("pa")} placeholder="120/80" />
+                  </Field>
+                  <Field label="FC">
+                    <Input {...form.register("fc")} placeholder="bpm" />
+                  </Field>
+                  <Field label="FR">
+                    <Input {...form.register("fr")} placeholder="rpm" />
+                  </Field>
+                  <Field label="Temp.">
+                    <Input {...form.register("temp")} placeholder="°C" />
+                  </Field>
+                  <Field label="SpO₂">
+                    <Input {...form.register("spo2")} placeholder="%" />
+                  </Field>
+                  <Field label="Glasgow">
+                    <Input {...form.register("glasgow")} placeholder="opcional" />
+                  </Field>
                 </div>
               </div>
               <div className="md:col-span-2">
-                <Field label="Justificativa da transferência" error={form.formState.errors.justificativa?.message}>
+                <Field
+                  label="Justificativa da hipótese de compra excepcional"
+                  error={form.formState.errors.justificativa?.message}
+                >
                   <Textarea rows={4} {...form.register("justificativa")} />
                 </Field>
               </div>
@@ -201,7 +271,9 @@ function NovaSolicitacao() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Exames e laudos anexos</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Exames e laudos anexos</CardTitle>
+            </CardHeader>
             <CardContent>
               <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border bg-muted/30 p-6 text-center transition-colors hover:bg-muted/60">
                 <FileUp className="h-6 w-6 text-primary" />
@@ -209,12 +281,20 @@ function NovaSolicitacao() {
                 <span className="text-xs text-muted-foreground">
                   Anexe TC, exames laboratoriais e laudos que justifiquem a compra.
                 </span>
-                <input type="file" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
               </label>
               {anexos.length > 0 && (
                 <ul className="mt-3 space-y-1.5">
                   {anexos.map((a) => (
-                    <li key={a.id} className="flex items-center justify-between rounded border bg-card px-3 py-1.5 text-sm">
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between rounded border bg-card px-3 py-1.5 text-sm"
+                    >
                       <span className="truncate">{a.nome}</span>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{a.tamanhoKb} KB</span>
@@ -234,10 +314,10 @@ function NovaSolicitacao() {
           </Card>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => navigate({ to: "/solicitante" })}>
+            <Button type="button" variant="outline" onClick={() => navigate({ to: "/regulador" })}>
               Cancelar
             </Button>
-            <Button type="submit">Enviar para regulação</Button>
+            <Button type="submit">Cadastrar caso</Button>
           </div>
         </form>
       </div>
