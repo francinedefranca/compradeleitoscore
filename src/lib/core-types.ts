@@ -38,6 +38,7 @@ export interface Usuario {
 
 export const USUARIOS_MOCK: Usuario[] = [
   {
+ main
     id: "u2",
     nome: "Dr. Bruno Lima",
     cpf: "222.222.222-22",

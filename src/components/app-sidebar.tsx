@@ -56,18 +56,7 @@ const navModulos: NavItem[] = [
     icon: Briefcase,
     perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
   },
-  {
-    title: "Cadastrar Caso",
-    url: "/solicitante/nova",
-    icon: Activity,
-    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"],
-  },
-  {
-    title: "Casos Cadastrados",
-    url: "/solicitante",
-    icon: FileText,
-    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE", "GESTAO"],
-  },
+ main
 ];
 
 const navSuporte: NavItem[] = [

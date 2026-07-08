@@ -127,7 +127,7 @@ function HomologarDialog({
   const { autorizarCompra } = useCore();
   const [obs, setObs] = useState("");
   const regulador = USUARIOS_MOCK.find((u) => u.id === solicitacao.parecer?.reguladorId);
-  const cadastrador = USUARIOS_MOCK.find((u) => u.id === solicitacao.solicitanteId);
+ main
   const gravidade = GRAVIDADE_META[solicitacao.gravidade];
 
   const assinar = () => {
@@ -149,11 +149,7 @@ function HomologarDialog({
 
         <div className="space-y-4 rounded-md border bg-card p-4 text-sm">
           <section>
-            <h3 className="mb-2 text-sm font-semibold">Dados do cadastro e da origem</h3>
-            <div className="grid gap-3 md:grid-cols-2">
-              <CampoRotulado label="Cadastrado por" valor={cadastrador?.nome ?? "—"} />
-              <CampoRotulado label="Unidade solicitante/origem" valor={solicitacao.unidadeOrigem} />
-              <CampoRotulado label="CNES da unidade" valor={solicitacao.cnesUnidadeOrigem ?? "—"} />
+ main
               <CampoRotulado label="Município de origem" valor={solicitacao.municipioOrigem} />
               <CampoRotulado label="Macrorregião PDR" valor={solicitacao.macrorregiaoOrigem} />
             </div>
@@ -161,7 +157,7 @@ function HomologarDialog({
 
           <section>
             <h3 className="mb-2 text-sm font-semibold">
-              Dados do paciente cadastrados no fluxo interno
+ main
             </h3>
             <div className="grid gap-3 md:grid-cols-2">
               <CampoRotulado label="Paciente" valor={solicitacao.pacienteNome} />
@@ -186,7 +182,7 @@ function HomologarDialog({
                 valor={`PA ${solicitacao.sinaisVitais.pa}; FC ${solicitacao.sinaisVitais.fc}; FR ${solicitacao.sinaisVitais.fr}; SpO2 ${solicitacao.sinaisVitais.spo2}; T ${solicitacao.sinaisVitais.temp}`}
               />
               <CampoRotulado
-                label="Justificativa da hipótese de compra"
+main
                 valor={solicitacao.justificativa}
               />
             </div>
