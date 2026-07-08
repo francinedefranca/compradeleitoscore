@@ -38,6 +38,7 @@ export interface Usuario {
 
 export const USUARIOS_MOCK: Usuario[] = [
   {
+ main
     id: "u2",
     nome: "Dr. Bruno Lima",
     cpf: "222.222.222-22",
@@ -87,16 +88,7 @@ export const USUARIOS_MOCK: Usuario[] = [
     email: "fabio@saude.mg.gov.br",
     senha: "core2026",
   },
-  {
-    id: "u7",
-    nome: "Gabriela Rocha",
-    cpf: "777.777.777-77",
-    matricula: "MG-1007",
-    perfil: "ADMINISTRATIVO_CORE",
-    unidade: "CORE/MG",
-    email: "gabriela@saude.mg.gov.br",
-    senha: "core2026",
-  },
+ main
 ];
 
 // ---------- Macrorregiões / clínicas ----------
@@ -459,7 +451,7 @@ export interface HospitalCredenciado {
   municipio: string;
   macrorregiao: Macrorregiao;
   emailPrincipal: string;
-  telefone: string;
+ main
   email2?: string;
   email3?: string;
   tipoPrestador: "Privado" | "Filantrópico/contratualizado SUS" | "Outro";
@@ -477,7 +469,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Belo Horizonte",
     macrorregiao: "Centro",
     emailPrincipal: "nir.veracruz@example.org",
-    telefone: "(31) 3333-1001",
+main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 3,
@@ -491,7 +483,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Belo Horizonte",
     macrorregiao: "Centro",
     emailPrincipal: "nir.materdei@example.org",
-    telefone: "(31) 3333-1002",
+ main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 5,
@@ -505,7 +497,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Belo Horizonte",
     macrorregiao: "Centro",
     emailPrincipal: "nir.semper@example.org",
-    telefone: "(31) 3333-1003",
+ main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 6,
@@ -519,7 +511,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Varginha",
     macrorregiao: "Sul",
     emailPrincipal: "nir.sul@example.org",
-    telefone: "(35) 3333-1004",
+ main
     tipoPrestador: "Filantrópico/contratualizado SUS",
     ativo: true,
     distanciaKmBH: 320,
@@ -533,7 +525,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Montes Claros",
     macrorregiao: "Norte",
     emailPrincipal: "nir.norte@example.org",
-    telefone: "(38) 3333-1005",
+main
     tipoPrestador: "Filantrópico/contratualizado SUS",
     ativo: true,
     distanciaKmBH: 420,
@@ -547,7 +539,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Ipatinga",
     macrorregiao: "Vale do Aço",
     emailPrincipal: "nir.marciocunha@example.org",
-    telefone: "(31) 3333-1006",
+ main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 210,

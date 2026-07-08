@@ -293,13 +293,12 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const recusar: CoreStore["recusar"] = useCallback(
     (id, motivo) => {
-      requirePerfil("AUTORIDADE");
-      patch(id, (s) => ({ ...s, status: "INDEFERIDO_AUTORIDADE" }));
+main
       logAudit({
         acao: "Solicitação recusada",
         detalhe: motivo,
         solicitacaoId: id,
-        statusDepois: "INDEFERIDO_AUTORIDADE",
+main
       });
     },
     [logAudit, patch],

@@ -38,36 +38,18 @@ const navGeral: NavItem[] = [
 
 const navModulos: NavItem[] = [
   {
-    title: "Avaliação Sanitária",
-    url: "/autoridade",
-    icon: Stethoscope,
-    perfis: ["AUTORIDADE"],
-  },
-  { title: "Casos", url: "/casos", icon: FileText, perfis: "todos" },
+ main
   {
     title: "Busca na Rede Credenciada",
     url: "/enfermeiro",
     icon: Search,
-    perfis: ["ENFERMEIRO"],
+ main
   },
   {
     title: "Administrativo / SEI",
     url: "/administrativo",
     icon: Briefcase,
-    perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"],
-  },
-  {
-    title: "Cadastrar Caso",
-    url: "/solicitante/nova",
-    icon: Activity,
-    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"],
-  },
-  {
-    title: "Casos Cadastrados",
-    url: "/solicitante",
-    icon: FileText,
-    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE", "GESTAO"],
-  },
+main
 ];
 
 const navSuporte: NavItem[] = [
