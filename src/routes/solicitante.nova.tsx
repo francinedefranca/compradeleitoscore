@@ -22,6 +22,7 @@ import { useCore } from "@/lib/core-store";
 import {
   GRAVIDADE_META,
   MACRORREGIOES,
+  type GatilhoCompra,
   type Anexo,
   type Gravidade,
   type Macrorregiao,
@@ -52,6 +53,14 @@ const schema = z.object({
   temp: z.string().min(1),
   spo2: z.string().min(1),
   glasgow: z.string().optional(),
+  gatilhoCompra: z.enum([
+    "ESGOTAMENTO_CLINICO",
+    "ORDEM_JUDICIAL_EXPIRADA",
+    "ESGOTAMENTO_LEITO_SUS",
+    "DETERMINACAO_JUDICIAL",
+    "RISCO_IMINENTE_MORTE",
+  ]),
+  numeroProcessoJudicial: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -67,6 +76,8 @@ function NovaSolicitacao() {
       macrorregiaoOrigem: "Centro",
       unidadeOrigem: "",
       cnesUnidadeOrigem: "",
+      gatilhoCompra: "ESGOTAMENTO_CLINICO",
+      numeroProcessoJudicial: "",
     },
   });
 
@@ -104,8 +115,9 @@ function NovaSolicitacao() {
           glasgow: data.glasgow,
         },
         anexos,
-        gatilhoCompra: "ESGOTAMENTO_CLINICO",
-        checkTermoEsgotamentoSus: false,
+        gatilhoCompra: data.gatilhoCompra as GatilhoCompra,
+        numeroProcessoJudicial: data.numeroProcessoJudicial,
+        checkTermoEsgotamentoSus: data.gatilhoCompra === "ESGOTAMENTO_LEITO_SUS",
       });
       toast.success(`Caso ${nova.protocolo} cadastrado para fluxo interno da CORE.`);
       navigate({ to: "/regulador" });
@@ -225,7 +237,36 @@ function NovaSolicitacao() {
                   </SelectContent>
                 </Select>
               </Field>
-              <div />
+
+              <Field label="Gatilho/hipótese de compra excepcional">
+                <Select
+                  value={form.watch("gatilhoCompra")}
+                  onValueChange={(v) => form.setValue("gatilhoCompra", v as GatilhoCompra)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ESGOTAMENTO_CLINICO">
+                      Esgotamento clínico/regulatório
+                    </SelectItem>
+                    <SelectItem value="ESGOTAMENTO_LEITO_SUS">
+                      Inexistência de leito SUS disponível
+                    </SelectItem>
+                    <SelectItem value="RISCO_IMINENTE_MORTE">Risco iminente de morte</SelectItem>
+                    <SelectItem value="DETERMINACAO_JUDICIAL">Determinação judicial</SelectItem>
+                    <SelectItem value="ORDEM_JUDICIAL_EXPIRADA">
+                      Ordem judicial com prazo expirado
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Nº do processo judicial, se houver">
+                <Input
+                  {...form.register("numeroProcessoJudicial")}
+                  placeholder="Ex.: 5000000-00.2026.8.13.0000"
+                />
+              </Field>
               <div className="md:col-span-2">
                 <Label className="mb-2 block text-sm font-medium">Sinais Vitais</Label>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-6">

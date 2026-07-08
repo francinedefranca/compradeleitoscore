@@ -8,12 +8,11 @@ import {
   type ClinicaMedica,
   type EscopoBusca,
   type EscolhaEnfermagem,
-  type Gravidade,
   type GatilhoCompra,
+  type Gravidade,
   type HistoricoContato,
   type Macrorregiao,
   type MotivoRecusa,
-  type ParecerRegulador,
   type PerfilId,
   type RegistroAuditoria,
   type ResultadoContato,
@@ -76,17 +75,6 @@ interface CoreStore {
   trocarUsuario: (id: string) => void;
   loginPorEmail: (email: string, senha: string) => { ok: true } | { ok: false; erro: string };
   criarSolicitacao: (data: NovaSolicitacaoInput) => Solicitacao;
-  emitirParecer: (
-    id: string,
-    parecer: {
-      vagaZeroTentada: boolean;
-      vagaZeroDetalhe: string;
-      parecerTecnico: string;
-      clinicaIndicada: ClinicaMedica;
-      checkTermoEsgotamentoSus: boolean;
-    },
-    proximoStatus: StatusSolicitacao,
-  ) => void;
   recusar: (id: string, motivo: string) => void;
   decidirAutoridade: (
     id: string,
@@ -129,15 +117,25 @@ interface CoreStore {
       checkLaudoPaciente: boolean;
       checkTermoAcionamento: boolean;
       checkTermoEsgotamentoSus: boolean;
+      checkDecisaoJudicial?: boolean;
     },
   ) => void;
   registrarCompra: (
     id: string,
-    dados: { hospitalId: string; valorDiaria: number; empenho: string; internacaoEm: string },
+    dados: {
+      hospitalId: string;
+      valorDiaria: number;
+      diariasCobradas: number;
+      valorPrevistoHospital: number;
+      empenho: string;
+      internacaoEm: string;
+      houveOpme: boolean;
+      descricaoOpme?: string;
+      outrosGastos?: string;
+    },
   ) => void;
   registrarInternacao: (id: string) => void;
   enviarFaturasParaCompras: (id: string, observacoes: string) => void;
-  decretarCompraDireta: (id: string, justificativa: string) => void;
 }
 
 export interface NovaSolicitacaoInput {
@@ -156,6 +154,7 @@ export interface NovaSolicitacaoInput {
   anexos: Anexo[];
   gatilhoCompra: GatilhoCompra;
   checkTermoEsgotamentoSus: boolean;
+  numeroProcessoJudicial?: string;
 }
 
 const Ctx = createContext<CoreStore | null>(null);
@@ -248,6 +247,12 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         status: "AGUARDANDO_REGULACAO",
         criadoEm: nowIso(),
         checkTermoEsgotamentoSus: data.checkTermoEsgotamentoSus,
+        judicial: data.numeroProcessoJudicial?.trim()
+          ? {
+              numeroProcesso: data.numeroProcessoJudicial.trim(),
+              observacoes: "Demanda judicial informada no cadastro.",
+            }
+          : undefined,
         aceitesHospitais: [],
         faturasEnviadasCompras: false,
         escopoBuscaAtual: "MACRO_ORIGEM",
@@ -264,32 +269,6 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       return nova;
     },
     [logAudit, usuarioAtual],
-  );
-
-  const emitirParecer: CoreStore["emitirParecer"] = useCallback(
-    (id, dados, proximo) => {
-      requirePerfil("AUTORIDADE");
-      patch(id, (s) => ({
-        ...s,
-        parecer: {
-          reguladorId: usuarioAtual.id,
-          clinicaIndicada: dados.clinicaIndicada,
-          parecerTecnico: dados.parecerTecnico,
-          vagaZeroTentada: dados.vagaZeroTentada,
-          vagaZeroDetalhe: dados.vagaZeroDetalhe,
-          checkTermoEsgotamentoSus: dados.checkTermoEsgotamentoSus,
-          emitidoEm: nowIso(),
-        },
-        status: proximo,
-      }));
-      logAudit({
-        acao: proximo === "PARECER_EMITIDO" ? "Parecer técnico emitido" : "Aguardando Vaga Zero",
-        solicitacaoId: id,
-        statusDepois: proximo,
-        detalhe: dados.clinicaIndicada,
-      });
-    },
-    [logAudit, patch, usuarioAtual],
   );
 
   const recusar: CoreStore["recusar"] = useCallback(
@@ -557,6 +536,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
           checkLaudoPaciente: dados.checkLaudoPaciente,
           checkTermoAcionamento: dados.checkTermoAcionamento,
           checkTermoEsgotamentoSus: dados.checkTermoEsgotamentoSus,
+          checkDecisaoJudicial: dados.checkDecisaoJudicial,
           abertoEm: nowIso(),
           abertoPorId: usuarioAtual.id,
         },
@@ -581,8 +561,13 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         compra: {
           hospitalId: dados.hospitalId,
           valorDiaria: dados.valorDiaria,
+          diariasCobradas: dados.diariasCobradas,
+          valorPrevistoHospital: dados.valorPrevistoHospital,
           empenho: dados.empenho,
           internacaoEm: dados.internacaoEm,
+          houveOpme: dados.houveOpme,
+          descricaoOpme: dados.descricaoOpme,
+          outrosGastos: dados.outrosGastos,
           registradoEm: nowIso(),
           registradoPorId: usuarioAtual.id,
         },
@@ -626,25 +611,6 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     [logAudit, patch, usuarioAtual],
   );
 
-  const decretarCompraDireta: CoreStore["decretarCompraDireta"] = useCallback(
-    (id, justificativa) => {
-      requirePerfil("AUTORIDADE");
-      if (justificativa.trim().length < 15) {
-        throw new Error("Justificativa mínima de 15 caracteres.");
-      }
-      patch(id, (s) => ({
-        ...s,
-        compraDireta: {
-          decretadaPorId: usuarioAtual.id,
-          decretadaEm: nowIso(),
-          justificativa,
-        },
-      }));
-      logAudit({ acao: "Compra direta decretada", detalhe: justificativa, solicitacaoId: id });
-    },
-    [logAudit, patch, usuarioAtual],
-  );
-
   const value: CoreStore = {
     usuarios: USUARIOS_MOCK,
     usuarioAtual,
@@ -653,7 +619,6 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     trocarUsuario,
     loginPorEmail,
     criarSolicitacao,
-    emitirParecer,
     recusar,
     decidirAutoridade,
     autorizarCompra,
@@ -670,7 +635,6 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     registrarCompra,
     registrarInternacao,
     enviarFaturasParaCompras,
-    decretarCompraDireta,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

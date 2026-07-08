@@ -87,7 +87,16 @@ export const USUARIOS_MOCK: Usuario[] = [
     email: "fabio@saude.mg.gov.br",
     senha: "core2026",
   },
-main
+  {
+    id: "u7",
+    nome: "Gabriela Rocha",
+    cpf: "777.777.777-77",
+    matricula: "MG-1007",
+    perfil: "ADMINISTRATIVO_CORE",
+    unidade: "CORE/MG",
+    email: "gabriela@saude.mg.gov.br",
+    senha: "core2026",
+  },
 ];
 
 // ---------- Macrorregiões / clínicas ----------
@@ -343,6 +352,7 @@ export interface ProcessoSei {
   checkLaudoPaciente: boolean;
   checkTermoAcionamento: boolean;
   checkTermoEsgotamentoSus: boolean;
+  checkDecisaoJudicial?: boolean;
   abertoEm: string;
   abertoPorId: string;
 }
@@ -350,8 +360,13 @@ export interface ProcessoSei {
 export interface CompraLeito {
   hospitalId: string;
   valorDiaria: number;
+  diariasCobradas: number;
+  valorPrevistoHospital: number;
   empenho: string;
   internacaoEm: string;
+  houveOpme: boolean;
+  descricaoOpme?: string;
+  outrosGastos?: string;
   registradoEm: string;
   registradoPorId: string;
 }
@@ -416,7 +431,6 @@ export interface Solicitacao {
   compra?: CompraLeito;
 
   judicial?: Judicial;
-  compraDireta?: { decretadaPorId: string; decretadaEm: string; justificativa: string };
   cancelamento?: Cancelamento;
 
   // Campos para dashboard/gestão

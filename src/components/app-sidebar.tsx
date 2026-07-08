@@ -48,13 +48,13 @@ const navModulos: NavItem[] = [
     title: "Busca na Rede Credenciada",
     url: "/enfermeiro",
     icon: Search,
-    perfis: ["ENFERMEIRO"],
+    perfis: ["ENFERMEIRO", "GESTAO"],
   },
   {
     title: "Administrativo / SEI",
     url: "/administrativo",
     icon: Briefcase,
-    perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"],
+    perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
   },
   {
     title: "Cadastrar Caso",

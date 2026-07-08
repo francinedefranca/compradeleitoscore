@@ -56,54 +56,141 @@ export const Route = createFileRoute("/enfermeiro")({
 const TEMPO_LIMITE_EXPANSAO_S = 24 * 60 * 60;
 
 function EnfermeiroPage() {
-  const { solicitacoes, iniciarBuscaMacro } = useCore();
-  const [visao, setVisao] = useState<"pendentes" | "andamento" | "aceites" | "repescagens">(
-    "pendentes",
-  );
+  const { solicitacoes, iniciarBuscaMacro, usuarioAtual } = useCore();
+  const somenteLeitura = usuarioAtual.perfil === "GESTAO";
+  type VisaoEnfermagem =
+    | "cadastradas"
+    | "aguardando_autoridade"
+    | "recusados"
+    | "macro"
+    | "prazo_vencido"
+    | "estadual"
+    | "leitos_localizados"
+    | "transferencia"
+    | "internado"
+    | "faturamento"
+    | "canceladas";
+  const [visao, setVisao] = useState<VisaoEnfermagem>("macro");
+
+  const temPrazoMacroVencido = (s: Solicitacao) =>
+    s.status === "BUSCA_MACRO_REGIONAL" &&
+    Boolean(s.buscaIniciadaEm) &&
+    Date.now() - new Date(s.buscaIniciadaEm!).getTime() >= TEMPO_LIMITE_EXPANSAO_S * 1000 &&
+    !s.aceitesHospitais.some((a) => (a.escopoBusca ?? "MACRO_ORIGEM") !== "ESTADUAL");
 
   const fila = useMemo(() => {
-    const statusDaVisao: Record<typeof visao, StatusSolicitacao[]> = {
-      pendentes: ["AUTORIZADO_AUTORIDADE"],
-      andamento: ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA"],
-      aceites: ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA", "LEITO_CONFIRMADO_ENFERMAGEM"],
-      repescagens: ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA"],
-    };
-
-    return solicitacoes.filter(
-      (s) =>
-        statusDaVisao[visao].includes(s.status) &&
-        (visao !== "aceites" || s.aceitesHospitais.length > 0) &&
-        (visao !== "repescagens" ||
-          (s.historicoContatos ?? []).some((c) => c.reacionarHospital && !c.repescagemRealizada)),
-    );
+    return solicitacoes.filter((s) => {
+      if (visao === "cadastradas") return true;
+      if (visao === "aguardando_autoridade")
+        return [
+          "AGUARDANDO_REGULACAO",
+          "AGUARDANDO_VAGA_ZERO",
+          "PARECER_EMITIDO",
+          "AUTORIZADO_AUTORIDADE",
+        ].includes(s.status);
+      if (visao === "recusados") return ["INDEFERIDO_AUTORIDADE", "RECUSADO"].includes(s.status);
+      if (visao === "macro") return s.status === "BUSCA_MACRO_REGIONAL";
+      if (visao === "prazo_vencido") return temPrazoMacroVencido(s);
+      if (visao === "estadual") return s.status === "BUSCA_ESTADUAL_EXPANDIDA";
+      if (visao === "leitos_localizados")
+        return s.aceitesHospitais.length > 0 && !s.escolhaEnfermagem;
+      if (visao === "transferencia") return s.status === "LEITO_CONFIRMADO_ENFERMAGEM";
+      if (visao === "internado") return s.status === "INTERNADO";
+      if (visao === "faturamento")
+        return [
+          "PROCESSO_SEI_INICIADO",
+          "LEITO_COMPRADO",
+          "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
+        ].includes(s.status);
+      if (visao === "canceladas")
+        return [
+          "CANCELADO_ABSORVIDO_SUS",
+          "DIRECIONADO_VAGA_ZERO",
+          "DIRECIONADO_LEITO_EXTRA",
+        ].includes(s.status);
+      return false;
+    });
   }, [solicitacoes, visao]);
 
   const contadores = useMemo(
     () => ({
-      pendentes: solicitacoes.filter((s) => s.status === "AUTORIZADO_AUTORIDADE").length,
-      andamento: solicitacoes.filter((s) =>
-        ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA"].includes(s.status),
+      cadastradas: solicitacoes.length,
+      aguardando_autoridade: solicitacoes.filter((s) =>
+        [
+          "AGUARDANDO_REGULACAO",
+          "AGUARDANDO_VAGA_ZERO",
+          "PARECER_EMITIDO",
+          "AUTORIZADO_AUTORIDADE",
+        ].includes(s.status),
       ).length,
-      aceites: solicitacoes.filter((s) => s.aceitesHospitais.length > 0).length,
-      repescagens: solicitacoes.filter((s) =>
-        (s.historicoContatos ?? []).some((c) => c.reacionarHospital && !c.repescagemRealizada),
+      recusados: solicitacoes.filter((s) =>
+        ["INDEFERIDO_AUTORIDADE", "RECUSADO"].includes(s.status),
+      ).length,
+      macro: solicitacoes.filter((s) => s.status === "BUSCA_MACRO_REGIONAL").length,
+      prazo_vencido: solicitacoes.filter(temPrazoMacroVencido).length,
+      estadual: solicitacoes.filter((s) => s.status === "BUSCA_ESTADUAL_EXPANDIDA").length,
+      leitos_localizados: solicitacoes.filter(
+        (s) => s.aceitesHospitais.length > 0 && !s.escolhaEnfermagem,
+      ).length,
+      transferencia: solicitacoes.filter((s) => s.status === "LEITO_CONFIRMADO_ENFERMAGEM").length,
+      internado: solicitacoes.filter((s) => s.status === "INTERNADO").length,
+      faturamento: solicitacoes.filter((s) =>
+        ["PROCESSO_SEI_INICIADO", "LEITO_COMPRADO", "PROCESSO_FINANCEIRO_EM_PAGAMENTO"].includes(
+          s.status,
+        ),
+      ).length,
+      canceladas: solicitacoes.filter((s) =>
+        ["CANCELADO_ABSORVIDO_SUS", "DIRECIONADO_VAGA_ZERO", "DIRECIONADO_LEITO_EXTRA"].includes(
+          s.status,
+        ),
       ).length,
     }),
     [solicitacoes],
   );
 
+  const exportarRelatorioBusca = () => {
+    const linhas = [
+      ["Protocolo", "Paciente", "Macrorregiao", "Status", "Aceites", "Busca iniciada em"],
+      ...fila.map((s) => [
+        s.protocolo,
+        s.pacienteNome,
+        s.macrorregiaoOrigem,
+        s.status,
+        String(s.aceitesHospitais.length),
+        s.buscaIniciadaEm ? formatDateTime(s.buscaIniciadaEm) : "",
+      ]),
+    ];
+    const csv = linhas
+      .map((linha) => linha.map((campo) => `"${campo.replaceAll('"', '""')}"`).join(";"))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-busca-${visao}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
   const selecionada = fila.find((s) => s.id === selecionadaId) ?? null;
 
   return (
-    <PerfilGate permitido={["ENFERMEIRO"]}>
+    <PerfilGate permitido={["ENFERMEIRO", "GESTAO"]}>
       <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Enfermagem Navegadora</h1>
-          <p className="text-sm text-muted-foreground">
-            Busca ativa de leitos em hospitais credenciados após homologação da Autoridade
-            Sanitária.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Enfermagem Navegadora</h1>
+            <p className="text-sm text-muted-foreground">
+              Busca ativa de leitos em hospitais credenciados após homologação da Autoridade
+              Sanitária.
+            </p>
+          </div>
+          {somenteLeitura && (
+            <Button type="button" variant="outline" onClick={exportarRelatorioBusca}>
+              Exportar relatório CSV
+            </Button>
+          )}
         </div>
 
         <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
@@ -111,19 +198,30 @@ function EnfermeiroPage() {
           Seleção focada na disponibilidade da vaga e adequação logística.
         </div>
 
-        <div className="grid gap-2 md:grid-cols-4">
+        <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-6">
           {[
-            ["pendentes", "Pendentes de início", contadores.pendentes],
-            ["andamento", "Em andamento", contadores.andamento],
-            ["aceites", "Com aceite", contadores.aceites],
-            ["repescagens", "Repescagens", contadores.repescagens],
+            ["cadastradas", "Solicitações cadastradas", contadores.cadastradas],
+            ["aguardando_autoridade", "Aguardando autoridade", contadores.aguardando_autoridade],
+            ["recusados", "Recusados", contadores.recusados],
+            ["macro", "Busca macrorregional", contadores.macro],
+            ["prazo_vencido", "Prazo 24h vencido", contadores.prazo_vencido],
+            ["estadual", "Busca estadual", contadores.estadual],
+            ["leitos_localizados", "Leitos localizados", contadores.leitos_localizados],
+            ["transferencia", "Em transferência", contadores.transferencia],
+            ["internado", "Internado", contadores.internado],
+            ["faturamento", "Faturamento", contadores.faturamento],
+            ["canceladas", "Canceladas/outro fluxo", contadores.canceladas],
           ].map(([id, label, total]) => (
             <button
               key={id}
               type="button"
               onClick={() => setVisao(id as typeof visao)}
               className={`rounded-md border p-3 text-left transition ${
-                visao === id ? "border-primary bg-primary/10" : "bg-card hover:bg-muted/50"
+                visao === id
+                  ? "border-primary bg-primary/10"
+                  : id === "prazo_vencido" && Number(total) > 0
+                    ? "border-destructive/60 bg-destructive/10 hover:bg-destructive/15"
+                    : "bg-card hover:bg-muted/50"
               }`}
             >
               <div className="text-xs text-muted-foreground">{label}</div>
@@ -161,7 +259,7 @@ function EnfermeiroPage() {
                       <StatusBadge status={s.status} />
                     </TableCell>
                     <TableCell className="flex gap-2">
-                      {s.status === "AUTORIZADO_AUTORIDADE" ? (
+                      {s.status === "AUTORIZADO_AUTORIDADE" && !somenteLeitura ? (
                         <Button
                           size="sm"
                           onClick={() => {
@@ -204,14 +302,26 @@ function EnfermeiroPage() {
         </Card>
 
         {selecionada && (
-          <PainelBusca solicitacao={selecionada} onClose={() => setSelecionadaId(null)} />
+          <PainelBusca
+            solicitacao={selecionada}
+            somenteLeitura={somenteLeitura}
+            onClose={() => setSelecionadaId(null)}
+          />
         )}
       </div>
     </PerfilGate>
   );
 }
 
-function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClose: () => void }) {
+function PainelBusca({
+  solicitacao,
+  somenteLeitura,
+  onClose,
+}: {
+  solicitacao: Solicitacao;
+  somenteLeitura: boolean;
+  onClose: () => void;
+}) {
   const {
     registrarAceite,
     registrarContato,
@@ -289,7 +399,7 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
           <Button
             size="sm"
             variant={podeExpandir && !temAceiteMacrorregional ? "default" : "outline"}
-            disabled={!podeExpandir || temAceiteMacrorregional}
+            disabled={somenteLeitura || !podeExpandir || temAceiteMacrorregional}
             onClick={() => {
               try {
                 expandirParaEstadual(solicitacao.id);
@@ -308,11 +418,21 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
                   ? "Expandir Busca para Nível Estadual"
                   : `Expansão em ${Math.ceil(restante / 3600)}h`}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setAceitesDialogOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={somenteLeitura}
+            onClick={() => setAceitesDialogOpen(true)}
+          >
             <Building2 className="h-4 w-4" /> Simular aceite de hospital
           </Button>
           {multiAceite && (
-            <Button size="sm" variant="secondary" onClick={() => setDesempateOpen(true)}>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={somenteLeitura}
+              onClick={() => setDesempateOpen(true)}
+            >
               <AlertTriangle className="h-4 w-4" /> Resolver desempate (
               {solicitacao.aceitesHospitais.length})
             </Button>
@@ -372,6 +492,7 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
             />
             <Button
               variant="outline"
+              disabled={somenteLeitura}
               onClick={() => {
                 const hospital = hospitais.find((h) => h.id === hospitalContatoId);
                 if (!hospital) return toast.error("Selecione um hospital.");
@@ -465,6 +586,7 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
                   <Button
                     size="sm"
                     variant="secondary"
+                    disabled={somenteLeitura}
                     onClick={() => {
                       marcarRepescagemRealizada(solicitacao.id, c.id);
                       toast.success("Repescagem marcada como realizada.");
@@ -490,6 +612,7 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
             />
             <Button
               variant="destructive"
+              disabled={somenteLeitura}
               onClick={() => {
                 try {
                   cancelarAbsorcaoSus(solicitacao.id, justificativa);
