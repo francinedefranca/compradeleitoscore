@@ -28,8 +28,10 @@ import {
   ESCOPOS_BUSCA,
   ESCOPO_BUSCA_LABEL,
   RESULTADO_CONTATO_LABEL,
+  MOTIVO_RECUSA_LABEL,
   type CanalContato,
   type EscopoBusca,
+  type MotivoRecusa,
   type ResultadoContato,
   type Solicitacao,
 } from "@/lib/core-types";
@@ -41,16 +43,13 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
 
   const [hospitalNome, setHospitalNome] = useState("");
   const [dataHora, setDataHora] = useState(() =>
-    new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-      .toISOString()
-      .slice(0, 16),
+    new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16),
   );
   const [canal, setCanal] = useState<CanalContato>("TELEFONE");
   const [resultado, setResultado] = useState<ResultadoContato>("SEM_RESPOSTA");
+  const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa>("SEM_LEITO_DISPONIVEL");
   const [justificativaRecusa, setJustificativaRecusa] = useState("");
-  const [escopo, setEscopo] = useState<EscopoBusca>(
-    solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM",
-  );
+  const [escopo, setEscopo] = useState<EscopoBusca>(solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM");
 
   const salvar = () => {
     try {
@@ -59,8 +58,8 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
         dataHoraContato: new Date(dataHora).toISOString(),
         canal,
         resultado,
-        justificativaRecusa:
-          resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
+        motivoRecusa: resultado === "RECUSA" ? motivoRecusa : undefined,
+        justificativaRecusa: resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
         escopoBusca: escopo,
       });
       toast.success("Tentativa de contato registrada.");
@@ -81,6 +80,23 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
       </CardHeader>
       <CardContent className="space-y-4">
         {/* ... (Mantenha o seu formulário aqui conforme estava no original) ... */}
+        {resultado === "RECUSA" && (
+          <div>
+            <Label className="text-xs font-medium">Motivo padronizado da recusa</Label>
+            <Select value={motivoRecusa} onValueChange={(v) => setMotivoRecusa(v as MotivoRecusa)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(MOTIVO_RECUSA_LABEL) as MotivoRecusa[]).map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {MOTIVO_RECUSA_LABEL[m]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -98,12 +114,16 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
                     <TableCell className="text-xs">{formatDateTime(h.dataHoraContato)}</TableCell>
                     <TableCell className="text-xs">{h.hospitalNome}</TableCell>
                     <TableCell className="text-xs">{ESCOPO_BUSCA_LABEL[h.escopoBusca]}</TableCell>
-                    <TableCell className="text-xs">{RESULTADO_CONTATO_LABEL[h.resultado]}</TableCell>
+                    <TableCell className="text-xs">
+                      {RESULTADO_CONTATO_LABEL[h.resultado]}
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-xs">Nenhum contato registrado.</TableCell>
+                  <TableCell colSpan={4} className="text-center text-xs">
+                    Nenhum contato registrado.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
