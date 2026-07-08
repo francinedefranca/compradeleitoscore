@@ -56,7 +56,7 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
         dataHoraContato: new Date(dataHora).toISOString(),
         canal,
         resultado,
-main
+> main
         motivoRecusa: resultado === "RECUSA" ? motivoRecusa : undefined,
         justificativaRecusa: resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
         escopoBusca: escopo,
