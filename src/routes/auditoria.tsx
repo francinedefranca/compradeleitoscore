@@ -40,9 +40,10 @@ function AuditoriaPage() {
       if (perfil !== "todos" && r.perfil !== perfil) return false;
       if (!term) return true;
       const sol = solicitacoes.find((s) => s.id === r.solicitacaoId);
-      return [
-        r.usuarioNome, r.usuarioCpf, r.acao, r.detalhe, sol?.protocolo, sol?.pacienteNome,
-      ].join(" ").toLowerCase().includes(term);
+      return [r.usuarioNome, r.usuarioCpf, r.acao, r.detalhe, sol?.protocolo, sol?.pacienteNome]
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
     });
   }, [auditoria, solicitacoes, q, perfil]);
 
@@ -72,7 +73,9 @@ function AuditoriaPage() {
           <SelectContent>
             <SelectItem value="todos">Todos os perfis</SelectItem>
             {PERFIS.map((p) => (
-              <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+              <SelectItem key={p.id} value={p.id}>
+                {p.nome}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -106,12 +109,19 @@ function AuditoriaPage() {
                     <TableCell className="font-mono text-xs">{sol?.protocolo}</TableCell>
                     <TableCell>
                       <div className="text-sm">{r.acao}</div>
-                      {r.detalhe && <div className="text-xs text-muted-foreground">{r.detalhe}</div>}
+                      {r.detalhe && (
+                        <div className="text-xs text-muted-foreground">{r.detalhe}</div>
+                      )}
                     </TableCell>
                     <TableCell>
                       {r.statusDepois && (
                         <div className="flex flex-wrap items-center gap-1 text-xs">
-                          {r.statusAntes && <><StatusBadge status={r.statusAntes} /><span>→</span></>}
+                          {r.statusAntes && (
+                            <>
+                              <StatusBadge status={r.statusAntes} />
+                              <span>→</span>
+                            </>
+                          )}
                           <StatusBadge status={r.statusDepois} />
                         </div>
                       )}

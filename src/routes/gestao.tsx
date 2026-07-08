@@ -52,10 +52,7 @@ function DashboardGestaoPage() {
   const { solicitacoes } = useCore();
 
   // Enriquecemos as solicitações usando o util (dado limpo → dashboard).
-  const enriquecidas = useMemo(
-    () => solicitacoes.map(enriquecerSolicitacao),
-    [solicitacoes],
-  ); 
+  const enriquecidas = useMemo(() => solicitacoes.map(enriquecerSolicitacao), [solicitacoes]);
 
   // Estado global de filtro por semana (governança operacional).
   const semanas = useMemo(() => {
@@ -122,7 +119,8 @@ function DashboardGestaoPage() {
       const hospital = HOSPITAIS_CREDENCIADOS.find(
         (h) => h.id === s.compra?.hospitalId || h.id === s.escolhaEnfermagem?.hospitalId,
       );
-      const r = s.regiaoExecutora ?? hospital?.macrorregiao ?? s.regiaoOrigem ?? s.macrorregiaoOrigem;
+      const r =
+        s.regiaoExecutora ?? hospital?.macrorregiao ?? s.regiaoOrigem ?? s.macrorregiaoOrigem;
       const cur = map.get(r) ?? { soma: 0, n: 0 };
       cur.soma += s.tempoRespostaHoras;
       cur.n += 1;
