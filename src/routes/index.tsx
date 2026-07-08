@@ -32,15 +32,13 @@ export const Route = createFileRoute("/")({
 
 const MS_24H = 24 * 60 * 60 * 1000;
 
- main
+main
 function PainelOperacional() {
   const { solicitacoes } = useCore();
   const agora = Date.now();
 
   const emAndamento = solicitacoes.filter(
-    (s) => !["RECUSADO", "CANCELADO_ABSORVIDO_SUS", "INTERNADO"].includes(s.status),
-  );
-  const triagensPendentes = solicitacoes.filter((s) =>
+main
     ["AGUARDANDO_REGULACAO", "AGUARDANDO_VAGA_ZERO", "PARECER_EMITIDO"].includes(s.status),
   );
   const buscasMacro = solicitacoes.filter((s) => s.status === "BUSCA_MACRO_REGIONAL");
@@ -60,7 +58,7 @@ main
         new Date(b.contato.dataHoraContato).getTime() -
         new Date(a.contato.dataHoraContato).getTime(),
     );
- main
+main
   const ultimosAceites = solicitacoes
     .flatMap((s) => s.aceitesHospitais.map((aceite) => ({ solicitacao: s, aceite })))
     .sort((a, b) => new Date(b.aceite.aceitoEm).getTime() - new Date(a.aceite.aceitoEm).getTime())
@@ -100,8 +98,7 @@ main
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <AtencaoCard
           icon={FileText}
-          title="Triagens pendentes"
-          value={triagensPendentes.length}
+main
           to="/regulador"
           tone="info"
         />
@@ -208,7 +205,7 @@ main
                     <TableCell className="font-mono text-xs">{solicitacao.protocolo}</TableCell>
                     <TableCell className="text-xs">{contato.hospitalNome}</TableCell>
                     <TableCell className="text-xs">{contato.resultado}</TableCell>
- main
+main
                     <TableCell className="text-xs">
                       {formatDateTime(contato.dataHoraContato)}
                     </TableCell>
@@ -240,7 +237,7 @@ main
             <LinhaPendencia
               key={contato.id}
               titulo={contato.hospitalNome}
- main
+main
               }
             />
           ))}
@@ -321,7 +318,7 @@ function hospitalNome(id?: string) {
   return HOSPITAIS_CREDENCIADOS.find((h) => h.id === id)?.nome;
 }
 
-main
+ main
 function ResumoItem({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border bg-background p-3">

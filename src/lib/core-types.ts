@@ -88,6 +88,7 @@ export const USUARIOS_MOCK: Usuario[] = [
     email: "fabio@saude.mg.gov.br",
     senha: "core2026",
   },
+ main
 ];
 
 // ---------- Macrorregiões / clínicas ----------
@@ -168,6 +169,9 @@ export type StatusSolicitacao =
   | "PARECER_EMITIDO"
   | "TERMO_PENDENTE_HOMOLOGACAO"
   | "AUTORIZADO_AUTORIDADE"
+  | "DIRECIONADO_VAGA_ZERO"
+  | "DIRECIONADO_LEITO_EXTRA"
+  | "INDEFERIDO_AUTORIDADE"
   | "BUSCA_MACRO_REGIONAL"
   | "BUSCA_ESTADUAL_EXPANDIDA"
   | "LEITO_CONFIRMADO_ENFERMAGEM"
@@ -181,11 +185,14 @@ export type StatusSolicitacao =
 export type StatusTone = "info" | "warning" | "success" | "destructive" | "muted";
 
 export const STATUS_META: Record<StatusSolicitacao, { label: string; tone: StatusTone }> = {
-  AGUARDANDO_REGULACAO: { label: "Aguardando Regulação", tone: "info" },
+  AGUARDANDO_REGULACAO: { label: "Aguardando Autoridade Sanitária", tone: "info" },
   AGUARDANDO_VAGA_ZERO: { label: "Aguardando Vaga Zero", tone: "warning" },
   PARECER_EMITIDO: { label: "Parecer Emitido", tone: "info" },
   TERMO_PENDENTE_HOMOLOGACAO: { label: "Termo Pendente Homologação", tone: "warning" },
-  AUTORIZADO_AUTORIDADE: { label: "Autorizado pela Autoridade", tone: "success" },
+  AUTORIZADO_AUTORIDADE: { label: "Compra autorizada", tone: "success" },
+  DIRECIONADO_VAGA_ZERO: { label: "Direcionado para Vaga Zero", tone: "warning" },
+  DIRECIONADO_LEITO_EXTRA: { label: "Direcionado para Leito Extra", tone: "warning" },
+  INDEFERIDO_AUTORIDADE: { label: "Indeferido pela Autoridade", tone: "destructive" },
   BUSCA_MACRO_REGIONAL: { label: "Busca Macrorregional", tone: "info" },
   BUSCA_ESTADUAL_EXPANDIDA: { label: "Busca Estadual", tone: "info" },
   LEITO_CONFIRMADO_ENFERMAGEM: { label: "Leito Confirmado (Enfermagem)", tone: "success" },
@@ -206,6 +213,9 @@ export const TRANSICOES: Record<
   PARECER_EMITIDO: [],
   TERMO_PENDENTE_HOMOLOGACAO: [],
   AUTORIZADO_AUTORIDADE: [],
+  DIRECIONADO_VAGA_ZERO: [],
+  DIRECIONADO_LEITO_EXTRA: [],
+  INDEFERIDO_AUTORIDADE: [],
   BUSCA_MACRO_REGIONAL: [],
   BUSCA_ESTADUAL_EXPANDIDA: [],
   LEITO_CONFIRMADO_ENFERMAGEM: [],
@@ -441,6 +451,7 @@ export interface HospitalCredenciado {
   municipio: string;
   macrorregiao: Macrorregiao;
   emailPrincipal: string;
+ main
   email2?: string;
   email3?: string;
   tipoPrestador: "Privado" | "Filantrópico/contratualizado SUS" | "Outro";
@@ -458,6 +469,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Belo Horizonte",
     macrorregiao: "Centro",
     emailPrincipal: "nir.veracruz@example.org",
+main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 3,
@@ -471,6 +483,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Belo Horizonte",
     macrorregiao: "Centro",
     emailPrincipal: "nir.materdei@example.org",
+ main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 5,
@@ -484,6 +497,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Belo Horizonte",
     macrorregiao: "Centro",
     emailPrincipal: "nir.semper@example.org",
+ main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 6,
@@ -497,6 +511,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Varginha",
     macrorregiao: "Sul",
     emailPrincipal: "nir.sul@example.org",
+ main
     tipoPrestador: "Filantrópico/contratualizado SUS",
     ativo: true,
     distanciaKmBH: 320,
@@ -510,6 +525,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Montes Claros",
     macrorregiao: "Norte",
     emailPrincipal: "nir.norte@example.org",
+main
     tipoPrestador: "Filantrópico/contratualizado SUS",
     ativo: true,
     distanciaKmBH: 420,
@@ -523,6 +539,7 @@ export const HOSPITAIS_CREDENCIADOS: HospitalCredenciado[] = [
     municipio: "Ipatinga",
     macrorregiao: "Vale do Aço",
     emailPrincipal: "nir.marciocunha@example.org",
+ main
     tipoPrestador: "Privado",
     ativo: true,
     distanciaKmBH: 210,

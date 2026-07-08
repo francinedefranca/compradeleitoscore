@@ -26,7 +26,7 @@ import {
   type Gravidade,
   type Macrorregiao,
 } from "@/lib/core-types";
-import { maskCns, maskCpf } from "@/lib/formatters";
+
 import { PerfilGate } from "@/components/perfil-gate";
 
 export const Route = createFileRoute("/solicitante/nova")({
@@ -36,8 +36,7 @@ export const Route = createFileRoute("/solicitante/nova")({
 
 const schema = z.object({
   pacienteNome: z.string().trim().min(3, "Informe o nome completo").max(120),
-  pacienteCpf: z.string().min(14, "CPF inválido"),
-  pacienteCns: z.string().min(15, "CNS deve ter 15 dígitos"),
+  pacienteDocumento: z.string().trim().min(5, "Informe CPF ou CNS"),
   pacienteNascimento: z.string().min(10, "Data obrigatória"),
   macrorregiaoOrigem: z.string().min(1),
   municipioOrigem: z.string().trim().min(2).max(80),
@@ -86,8 +85,7 @@ function NovaSolicitacao() {
     try {
       const nova = criarSolicitacao({
         pacienteNome: data.pacienteNome,
-        pacienteCpf: data.pacienteCpf,
-        pacienteCns: data.pacienteCns,
+        pacienteDocumento: data.pacienteDocumento,
         pacienteNascimento: data.pacienteNascimento,
         macrorregiaoOrigem: data.macrorregiaoOrigem as Macrorregiao,
         municipioOrigem: data.municipioOrigem,
@@ -144,18 +142,10 @@ function NovaSolicitacao() {
               >
                 <Input type="date" {...form.register("pacienteNascimento")} />
               </Field>
-              <Field label="CPF" error={form.formState.errors.pacienteCpf?.message}>
+              <Field label="CPF ou CNS" error={form.formState.errors.pacienteDocumento?.message}>
                 <Input
-                  {...form.register("pacienteCpf")}
-                  onChange={(e) => form.setValue("pacienteCpf", maskCpf(e.target.value))}
-                  placeholder="000.000.000-00"
-                />
-              </Field>
-              <Field label="CNS (Cartão SUS)" error={form.formState.errors.pacienteCns?.message}>
-                <Input
-                  {...form.register("pacienteCns")}
-                  onChange={(e) => form.setValue("pacienteCns", maskCns(e.target.value))}
-                  placeholder="000 0000 0000 0000"
+                  {...form.register("pacienteDocumento")}
+                  placeholder="Informe CPF ou CNS disponível"
                 />
               </Field>
             </CardContent>

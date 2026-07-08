@@ -23,17 +23,26 @@ export const Route = createFileRoute("/solicitante/")({
 });
 
 function CasosCadastrados() {
-  const { solicitacoes, usuarioAtual } = useCore();
+  const { solicitacoes } = useCore();
 
   return (
-    <PerfilGate permitido={["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE", "GESTAO"]}>
+    <PerfilGate
+      permitido={[
+        "REGULADOR",
+        "AUTORIDADE",
+        "ENFERMEIRO",
+        "ADMINISTRATIVO",
+        "ADMINISTRATIVO_CORE",
+        "GESTAO",
+      ]}
+    >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Casos cadastrados</h1>
             <p className="text-sm text-muted-foreground">
-              Casos de compra excepcional registrados a partir da avaliação interna na ferramenta
-              estadual.
+              Casos de compra excepcional visíveis aos operadores, para acompanhamento conforme a
+              fase de atuação.
             </p>
           </div>
           <Button asChild>
@@ -57,48 +66,44 @@ function CasosCadastrados() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {solicitacoes
-                  .filter(
-                    (s) => usuarioAtual.perfil === "GESTAO" || s.solicitanteId === usuarioAtual.id,
-                  )
-                  .map((s) => {
-                    const g = GRAVIDADE_META[s.gravidade];
-                    return (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-mono text-xs">{s.protocolo}</TableCell>
-                        <TableCell>
-                          <div className="font-medium">{s.pacienteNome}</div>
-                          <div className="text-xs text-muted-foreground">CPF {s.pacienteCpf}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">{s.diagnosticoPrincipal}</div>
-                          <div className="text-xs text-muted-foreground">CID {s.cid}</div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`rounded px-2 py-0.5 text-xs font-medium ${g.classe}`}>
-                            {g.label}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={s.status} />
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {formatDateTime(s.criadoEm)}
-                          <div>há {timeAgo(s.criadoEm)}</div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                {solicitacoes.filter(
-                  (s) => usuarioAtual.perfil === "GESTAO" || s.solicitanteId === usuarioAtual.id,
-                ).length === 0 && (
+                {solicitacoes.map((s) => {
+                  const g = GRAVIDADE_META[s.gravidade];
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-mono text-xs">{s.protocolo}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{s.pacienteNome}</div>
+                        <div className="text-xs text-muted-foreground">
+                          CPF/CNS {s.pacienteCpf || s.pacienteCns || "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{s.diagnosticoPrincipal}</div>
+                        <div className="text-xs text-muted-foreground">CID {s.cid}</div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`rounded px-2 py-0.5 text-xs font-medium ${g.classe}`}>
+                          {g.label}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s.status} />
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatDateTime(s.criadoEm)}
+                        <div>há {timeAgo(s.criadoEm)}</div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {solicitacoes.length === 0 && (
                   <TableRow>
                     <TableCell
                       colSpan={6}
                       className="py-8 text-center text-sm text-muted-foreground"
                     >
                       <FileText className="mx-auto mb-2 h-8 w-8" />
-                      Nenhum caso cadastrado por este perfil.
+                      Nenhum caso cadastrado.
                     </TableCell>
                   </TableRow>
                 )}

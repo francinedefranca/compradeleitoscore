@@ -14,6 +14,7 @@ import { Route as PrestadoresRouteImport } from './routes/prestadores'
 import { Route as GestaoRouteImport } from './routes/gestao'
 import { Route as EnfermeiroRouteImport } from './routes/enfermeiro'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CasosRouteImport } from './routes/casos'
 import { Route as AutoridadeRouteImport } from './routes/autoridade'
 import { Route as AuditoriaRouteImport } from './routes/auditoria'
 import { Route as AdministrativoRouteImport } from './routes/administrativo'
@@ -44,6 +45,11 @@ const EnfermeiroRoute = EnfermeiroRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CasosRoute = CasosRouteImport.update({
+  id: '/casos',
+  path: '/casos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AutoridadeRoute = AutoridadeRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
+  '/casos': typeof CasosRoute
   '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
   '/gestao': typeof GestaoRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
+  '/casos': typeof CasosRoute
   '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
   '/gestao': typeof GestaoRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/administrativo': typeof AdministrativoRoute
   '/auditoria': typeof AuditoriaRoute
   '/autoridade': typeof AutoridadeRoute
+  '/casos': typeof CasosRoute
   '/dashboard': typeof DashboardRoute
   '/enfermeiro': typeof EnfermeiroRoute
   '/gestao': typeof GestaoRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/administrativo'
     | '/auditoria'
     | '/autoridade'
+    | '/casos'
     | '/dashboard'
     | '/enfermeiro'
     | '/gestao'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/administrativo'
     | '/auditoria'
     | '/autoridade'
+    | '/casos'
     | '/dashboard'
     | '/enfermeiro'
     | '/gestao'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/administrativo'
     | '/auditoria'
     | '/autoridade'
+    | '/casos'
     | '/dashboard'
     | '/enfermeiro'
     | '/gestao'
@@ -164,6 +176,7 @@ export interface RootRouteChildren {
   AdministrativoRoute: typeof AdministrativoRoute
   AuditoriaRoute: typeof AuditoriaRoute
   AutoridadeRoute: typeof AutoridadeRoute
+  CasosRoute: typeof CasosRoute
   DashboardRoute: typeof DashboardRoute
   EnfermeiroRoute: typeof EnfermeiroRoute
   GestaoRoute: typeof GestaoRoute
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/casos': {
+      id: '/casos'
+      path: '/casos'
+      fullPath: '/casos'
+      preLoaderRoute: typeof CasosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/autoridade': {
@@ -260,6 +280,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdministrativoRoute: AdministrativoRoute,
   AuditoriaRoute: AuditoriaRoute,
   AutoridadeRoute: AutoridadeRoute,
+  CasosRoute: CasosRoute,
   DashboardRoute: DashboardRoute,
   EnfermeiroRoute: EnfermeiroRoute,
   GestaoRoute: GestaoRoute,

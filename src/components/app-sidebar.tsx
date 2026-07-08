@@ -38,25 +38,18 @@ const navGeral: NavItem[] = [
 
 const navModulos: NavItem[] = [
   {
-    title: "Triagem",
-    url: "/regulador",
-    icon: Stethoscope,
-    perfis: ["REGULADOR", "AUTORIDADE", "GESTAO"],
-  },
-  { title: "Casos", url: "/dashboard", icon: FileText, perfis: "todos" },
+ main
   {
     title: "Busca na Rede Credenciada",
     url: "/enfermeiro",
     icon: Search,
-    perfis: ["ENFERMEIRO", "GESTAO"],
+ main
   },
   {
     title: "Administrativo / SEI",
     url: "/administrativo",
     icon: Briefcase,
-    perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
-  },
- main
+main
 ];
 
 const navSuporte: NavItem[] = [

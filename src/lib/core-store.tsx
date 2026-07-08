@@ -45,7 +45,7 @@ const seedSolicitacoes: Solicitacao[] = [
     municipioOrigem: "Belo Horizonte",
     pacienteNome: "Maria Aparecida da Silva",
     pacienteCpf: "123.456.789-00",
-    pacienteCns: "700 0000 0000 0000",
+    pacienteCns: "",
     pacienteNascimento: "1958-04-12",
     diagnosticoPrincipal: "Sepse grave / IRpA",
     cid: "A41.9",
@@ -87,6 +87,14 @@ interface CoreStore {
     proximoStatus: StatusSolicitacao,
   ) => void;
   recusar: (id: string, motivo: string) => void;
+  decidirAutoridade: (
+    id: string,
+    dados: {
+      decisao: "COMPRA_LEITOS" | "VAGA_ZERO" | "LEITO_EXTRA" | "INDEFERIR";
+      observacoes: string;
+      clinicaIndicada?: ClinicaMedica;
+    },
+  ) => void;
   autorizarCompra: (id: string, dados: { observacoes: string }) => void;
   atualizarEscopoBusca: (id: string, escopo: EscopoBusca) => void;
   atualizarStatusTransferencia: (id: string, status: StatusTransferencia) => void;
@@ -133,8 +141,7 @@ interface CoreStore {
 
 export interface NovaSolicitacaoInput {
   pacienteNome: string;
-  pacienteCpf: string;
-  pacienteCns: string;
+  pacienteDocumento: string;
   pacienteNascimento: string;
   macrorregiaoOrigem: Macrorregiao;
   municipioOrigem: string;
@@ -227,8 +234,8 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         macrorregiaoOrigem: data.macrorregiaoOrigem,
         municipioOrigem: data.municipioOrigem,
         pacienteNome: data.pacienteNome,
-        pacienteCpf: data.pacienteCpf,
-        pacienteCns: data.pacienteCns,
+        pacienteCpf: data.pacienteDocumento,
+        pacienteCns: "",
         pacienteNascimento: data.pacienteNascimento,
         diagnosticoPrincipal: data.diagnosticoPrincipal,
         cid: data.cid,
@@ -260,7 +267,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const emitirParecer: CoreStore["emitirParecer"] = useCallback(
     (id, dados, proximo) => {
-      requirePerfil("REGULADOR");
+      requirePerfil("AUTORIDADE");
       patch(id, (s) => ({
         ...s,
         parecer: {
@@ -286,16 +293,57 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const recusar: CoreStore["recusar"] = useCallback(
     (id, motivo) => {
-      requirePerfil("REGULADOR");
-      patch(id, (s) => ({ ...s, status: "RECUSADO" }));
+main
       logAudit({
         acao: "Solicitação recusada",
         detalhe: motivo,
         solicitacaoId: id,
-        statusDepois: "RECUSADO",
+main
       });
     },
     [logAudit, patch],
+  );
+
+  const decidirAutoridade: CoreStore["decidirAutoridade"] = useCallback(
+    (id, dados) => {
+      requirePerfil("AUTORIDADE");
+      const statusPorDecisao: Record<typeof dados.decisao, StatusSolicitacao> = {
+        COMPRA_LEITOS: "AUTORIZADO_AUTORIDADE",
+        VAGA_ZERO: "DIRECIONADO_VAGA_ZERO",
+        LEITO_EXTRA: "DIRECIONADO_LEITO_EXTRA",
+        INDEFERIR: "INDEFERIDO_AUTORIDADE",
+      };
+      const statusDepois = statusPorDecisao[dados.decisao];
+      patch(id, (s) => ({
+        ...s,
+        parecer: {
+          reguladorId: usuarioAtual.id,
+          clinicaIndicada: dados.clinicaIndicada ?? s.parecer?.clinicaIndicada ?? "UTI Adulto",
+          parecerTecnico: dados.observacoes,
+          vagaZeroTentada: dados.decisao === "VAGA_ZERO",
+          vagaZeroDetalhe: dados.decisao === "VAGA_ZERO" ? dados.observacoes : "",
+          checkTermoEsgotamentoSus: dados.decisao === "COMPRA_LEITOS",
+          emitidoEm: nowIso(),
+        },
+        autorizacao:
+          dados.decisao === "COMPRA_LEITOS"
+            ? {
+                autoridadeId: usuarioAtual.id,
+                termoNumero: `TA-${Date.now().toString(36).toUpperCase()}`,
+                observacoes: dados.observacoes,
+                autorizadoEm: nowIso(),
+              }
+            : s.autorizacao,
+        status: statusDepois,
+      }));
+      logAudit({
+        acao: "Decisão da Autoridade Sanitária",
+        detalhe: `${dados.decisao} — ${dados.observacoes}`,
+        solicitacaoId: id,
+        statusDepois,
+      });
+    },
+    [logAudit, patch, usuarioAtual],
   );
 
   const autorizarCompra: CoreStore["autorizarCompra"] = useCallback(
@@ -605,6 +653,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     criarSolicitacao,
     emitirParecer,
     recusar,
+    decidirAutoridade,
     autorizarCompra,
     atualizarEscopoBusca,
     atualizarStatusTransferencia,

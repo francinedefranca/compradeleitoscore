@@ -121,7 +121,7 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
                 ))
               ) : (
                 <TableRow>
- main
+main
                   <TableCell colSpan={4} className="text-center text-xs">
                     Nenhum contato registrado.
                   </TableCell>
