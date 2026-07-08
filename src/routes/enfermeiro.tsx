@@ -38,8 +38,11 @@ import { useCore } from "@/lib/core-store";
 import {
   CRITERIO_DESEMPATE_LABEL,
   HOSPITAIS_CREDENCIADOS,
+  MOTIVO_RECUSA_LABEL,
   type CriterioDesempate,
+  type MotivoRecusa,
   type Solicitacao,
+  type StatusSolicitacao,
 } from "@/lib/core-types";
 import { StatusBadge } from "@/lib/status-badge";
 import { formatDateTime } from "@/lib/formatters";
@@ -49,21 +52,43 @@ export const Route = createFileRoute("/enfermeiro")({
   component: EnfermeiroPage,
 });
 
-// Tempo (em segundos) para liberar expansão estadual.
-const TEMPO_LIMITE_EXPANSAO_S = 45;
+// Na operação real, a expansão estadual ocorre após 24h sem aceite.
+const TEMPO_LIMITE_EXPANSAO_S = 24 * 60 * 60;
 
 function EnfermeiroPage() {
   const { solicitacoes, iniciarBuscaMacro } = useCore();
+  const [visao, setVisao] = useState<"pendentes" | "andamento" | "aceites" | "repescagens">(
+    "pendentes",
+  );
 
-  const fila = useMemo(
-    () =>
-      solicitacoes.filter((s) =>
-        [
-          "AUTORIZADO_AUTORIDADE",
-          "BUSCA_MACRO_REGIONAL",
-          "BUSCA_ESTADUAL_EXPANDIDA",
-        ].includes(s.status),
-      ),
+  const fila = useMemo(() => {
+    const statusDaVisao: Record<typeof visao, StatusSolicitacao[]> = {
+      pendentes: ["AUTORIZADO_AUTORIDADE"],
+      andamento: ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA"],
+      aceites: ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA", "LEITO_CONFIRMADO_ENFERMAGEM"],
+      repescagens: ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA"],
+    };
+
+    return solicitacoes.filter(
+      (s) =>
+        statusDaVisao[visao].includes(s.status) &&
+        (visao !== "aceites" || s.aceitesHospitais.length > 0) &&
+        (visao !== "repescagens" ||
+          (s.historicoContatos ?? []).some((c) => c.reacionarHospital && !c.repescagemRealizada)),
+    );
+  }, [solicitacoes, visao]);
+
+  const contadores = useMemo(
+    () => ({
+      pendentes: solicitacoes.filter((s) => s.status === "AUTORIZADO_AUTORIDADE").length,
+      andamento: solicitacoes.filter((s) =>
+        ["BUSCA_MACRO_REGIONAL", "BUSCA_ESTADUAL_EXPANDIDA"].includes(s.status),
+      ).length,
+      aceites: solicitacoes.filter((s) => s.aceitesHospitais.length > 0).length,
+      repescagens: solicitacoes.filter((s) =>
+        (s.historicoContatos ?? []).some((c) => c.reacionarHospital && !c.repescagemRealizada),
+      ).length,
+    }),
     [solicitacoes],
   );
 
@@ -76,7 +101,8 @@ function EnfermeiroPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Enfermagem Navegadora</h1>
           <p className="text-sm text-muted-foreground">
-            Busca ativa de leitos em hospitais credenciados após homologação da Autoridade Sanitária.
+            Busca ativa de leitos em hospitais credenciados após homologação da Autoridade
+            Sanitária.
           </p>
         </div>
 
@@ -85,9 +111,30 @@ function EnfermeiroPage() {
           Seleção focada na disponibilidade da vaga e adequação logística.
         </div>
 
+        <div className="grid gap-2 md:grid-cols-4">
+          {[
+            ["pendentes", "Pendentes de início", contadores.pendentes],
+            ["andamento", "Em andamento", contadores.andamento],
+            ["aceites", "Com aceite", contadores.aceites],
+            ["repescagens", "Repescagens", contadores.repescagens],
+          ].map(([id, label, total]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setVisao(id as typeof visao)}
+              className={`rounded-md border p-3 text-left transition ${
+                visao === id ? "border-primary bg-primary/10" : "bg-card hover:bg-muted/50"
+              }`}
+            >
+              <div className="text-xs text-muted-foreground">{label}</div>
+              <div className="mt-1 text-2xl font-bold">{total}</div>
+            </button>
+          ))}
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Fila de casos em busca</CardTitle>
+            <CardTitle className="text-base">Painel de navegação da enfermagem</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -130,7 +177,11 @@ function EnfermeiroPage() {
                           <Radar className="h-4 w-4" /> Iniciar busca
                         </Button>
                       ) : (
-                        <Button size="sm" variant="secondary" onClick={() => setSelecionadaId(s.id)}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setSelecionadaId(s.id)}
+                        >
                           <Search className="h-4 w-4" /> Abrir
                         </Button>
                       )}
@@ -139,7 +190,10 @@ function EnfermeiroPage() {
                 ))}
                 {fila.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       Nenhum caso aguardando busca.
                     </TableCell>
                   </TableRow>
@@ -149,14 +203,22 @@ function EnfermeiroPage() {
           </CardContent>
         </Card>
 
-        {selecionada && <PainelBusca solicitacao={selecionada} onClose={() => setSelecionadaId(null)} />}
+        {selecionada && (
+          <PainelBusca solicitacao={selecionada} onClose={() => setSelecionadaId(null)} />
+        )}
       </div>
     </PerfilGate>
   );
 }
 
 function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClose: () => void }) {
-  const { registrarAceite, expandirParaEstadual, cancelarAbsorcaoSus } = useCore();
+  const {
+    registrarAceite,
+    registrarContato,
+    marcarRepescagemRealizada,
+    expandirParaEstadual,
+    cancelarAbsorcaoSus,
+  } = useCore();
 
   const estadual = solicitacao.status === "BUSCA_ESTADUAL_EXPANDIDA";
   const hospitais = useMemo(
@@ -182,11 +244,19 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
   }, [inicio]);
 
   const podeExpandir = !estadual && decorridos >= TEMPO_LIMITE_EXPANSAO_S;
+  const temAceiteMacrorregional = solicitacao.aceitesHospitais.some(
+    (a) => (a.escopoBusca ?? "MACRO_ORIGEM") !== "ESTADUAL",
+  );
   const restante = Math.max(0, TEMPO_LIMITE_EXPANSAO_S - decorridos);
 
   const [aceitesDialogOpen, setAceitesDialogOpen] = useState(false);
   const [desempateOpen, setDesempateOpen] = useState(false);
   const [justificativa, setJustificativa] = useState("");
+  const [hospitalContatoId, setHospitalContatoId] = useState(hospitais[0]?.id ?? "");
+  const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa>("SEM_LEITO_DISPONIVEL");
+  const [observacaoContato, setObservacaoContato] = useState("");
+  const [reacionar, setReacionar] = useState(false);
+  const [repescagemEm, setRepescagemEm] = useState("");
 
   const multiAceite = solicitacao.aceitesHospitais.length > 1;
 
@@ -218,8 +288,8 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
         <div className="flex flex-wrap items-center gap-2">
           <Button
             size="sm"
-            variant={podeExpandir ? "default" : "outline"}
-            disabled={!podeExpandir}
+            variant={podeExpandir && !temAceiteMacrorregional ? "default" : "outline"}
+            disabled={!podeExpandir || temAceiteMacrorregional}
             onClick={() => {
               try {
                 expandirParaEstadual(solicitacao.id);
@@ -232,9 +302,11 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
             <Globe2 className="h-4 w-4" />
             {estadual
               ? "Busca estadual ativa"
-              : podeExpandir
-                ? "Expandir Busca para Nível Estadual"
-                : `Aguarde ${restante}s para expandir`}
+              : temAceiteMacrorregional
+                ? "Expansão bloqueada: já houve aceite na macro"
+                : podeExpandir
+                  ? "Expandir Busca para Nível Estadual"
+                  : `Expansão em ${Math.ceil(restante / 3600)}h`}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setAceitesDialogOpen(true)}>
             <Building2 className="h-4 w-4" /> Simular aceite de hospital
@@ -245,6 +317,87 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
               {solicitacao.aceitesHospitais.length})
             </Button>
           )}
+        </div>
+
+        <div className="rounded-md border bg-muted/20 p-3">
+          <div className="mb-3">
+            <div className="text-sm font-semibold">Registro de Busca na Rede Credenciada</div>
+            <p className="text-xs text-muted-foreground">
+              Registre recusas, sem resposta e repescagens como linha do tempo operacional do caso.
+            </p>
+          </div>
+          <div className="grid gap-2 md:grid-cols-5">
+            <select
+              className="h-9 rounded-md border bg-background px-2 text-sm md:col-span-2"
+              value={hospitalContatoId}
+              onChange={(e) => setHospitalContatoId(e.target.value)}
+            >
+              {hospitais.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.nome}
+                </option>
+              ))}
+            </select>
+            <select
+              className="h-9 rounded-md border bg-background px-2 text-sm"
+              value={motivoRecusa}
+              onChange={(e) => setMotivoRecusa(e.target.value as MotivoRecusa)}
+            >
+              {(Object.keys(MOTIVO_RECUSA_LABEL) as MotivoRecusa[]).map((m) => (
+                <option key={m} value={m}>
+                  {MOTIVO_RECUSA_LABEL[m]}
+                </option>
+              ))}
+            </select>
+            <Input
+              type="datetime-local"
+              value={repescagemEm}
+              disabled={!reacionar}
+              onChange={(e) => setRepescagemEm(e.target.value)}
+            />
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={reacionar}
+                onChange={(e) => setReacionar(e.target.checked)}
+              />
+              Reacionar hospital
+            </label>
+          </div>
+          <div className="mt-2 flex gap-2">
+            <Input
+              placeholder="Observação objetiva da resposta/contato"
+              value={observacaoContato}
+              onChange={(e) => setObservacaoContato(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              onClick={() => {
+                const hospital = hospitais.find((h) => h.id === hospitalContatoId);
+                if (!hospital) return toast.error("Selecione um hospital.");
+                try {
+                  registrarContato(solicitacao.id, {
+                    hospitalNome: hospital.nome,
+                    dataHoraContato: new Date().toISOString(),
+                    canal: "EMAIL",
+                    resultado: "RECUSA",
+                    motivoRecusa,
+                    justificativaRecusa: observacaoContato || MOTIVO_RECUSA_LABEL[motivoRecusa],
+                    escopoBusca: estadual ? "ESTADUAL" : "MACRO_ORIGEM",
+                    reacionarHospital: reacionar,
+                    repescagemEm:
+                      reacionar && repescagemEm ? new Date(repescagemEm).toISOString() : undefined,
+                  });
+                  toast.success("Recusa/contato registrado na linha do tempo.");
+                  setObservacaoContato("");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Erro");
+                }
+              }}
+            >
+              Registrar recusa
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-md border">
@@ -283,6 +436,46 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
               })}
             </TableBody>
           </Table>
+        </div>
+
+        <div className="rounded-md border">
+          <div className="border-b px-3 py-2 text-sm font-semibold">Linha do tempo da busca</div>
+          <div className="divide-y">
+            {(solicitacao.historicoContatos ?? []).length === 0 && (
+              <p className="p-3 text-sm text-muted-foreground">Nenhuma resposta registrada.</p>
+            )}
+            {(solicitacao.historicoContatos ?? []).map((c) => (
+              <div
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
+              >
+                <div>
+                  <div className="font-medium">
+                    {c.hospitalNome} • {c.resultado}
+                    {c.motivoRecusa ? ` — ${MOTIVO_RECUSA_LABEL[c.motivoRecusa]}` : ""}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDateTime(c.dataHoraContato)} • {c.escopoBusca}
+                    {c.reacionarHospital && c.repescagemEm
+                      ? ` • Repescagem: ${formatDateTime(c.repescagemEm)}`
+                      : ""}
+                  </div>
+                </div>
+                {c.reacionarHospital && !c.repescagemRealizada && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      marcarRepescagemRealizada(solicitacao.id, c.id);
+                      toast.success("Repescagem marcada como realizada.");
+                    }}
+                  >
+                    Repescagem realizada
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
@@ -329,10 +522,7 @@ function PainelBusca({ solicitacao, onClose }: { solicitacao: Solicitacao; onClo
       )}
 
       {desempateOpen && (
-        <DesempateDialog
-          solicitacao={solicitacao}
-          onClose={() => setDesempateOpen(false)}
-        />
+        <DesempateDialog solicitacao={solicitacao} onClose={() => setDesempateOpen(false)} />
       )}
     </Card>
   );
