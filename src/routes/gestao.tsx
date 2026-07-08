@@ -353,10 +353,3 @@ function Empty() {
     </div>
   );
 }
-const calcularTaxaRecusa = (solicitacoes: Solicitacao[]) => {
-  const totalContatos = solicitacoes.flatMap(s => s.historicoContatos).length;
-  const totalRecusas = solicitacoes.flatMap(s => s.historicoContatos)
-    .filter(c => c.resultado === 'Recusa').length;
-  
-  return totalContatos === 0 ? 0 : (totalRecusas / totalContatos) * 100;
-};
