@@ -56,8 +56,7 @@ const navModulos: NavItem[] = [
     icon: Briefcase,
     perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
   },
-  { title: "Minhas Solicitações", url: "/solicitante", icon: FileText, perfis: ["SOLICITANTE"] },
-  { title: "Nova Solicitação", url: "/solicitante/nova", icon: Activity, perfis: ["SOLICITANTE"] },
+ main
 ];
 
 const navSuporte: NavItem[] = [

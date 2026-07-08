@@ -4,13 +4,7 @@
 
 // ---------- Perfis ----------
 export type PerfilId =
-  | "SOLICITANTE"
-  | "REGULADOR"
-  | "AUTORIDADE"
-  | "ENFERMEIRO"
-  | "ADMINISTRATIVO"
-  | "ADMINISTRATIVO_CORE"
-  | "GESTAO";
+  "REGULADOR" | "AUTORIDADE" | "ENFERMEIRO" | "ADMINISTRATIVO" | "ADMINISTRATIVO_CORE" | "GESTAO";
 
 export interface Perfil {
   id: PerfilId;
@@ -19,7 +13,6 @@ export interface Perfil {
 }
 
 export const PERFIS: Perfil[] = [
-  { id: "SOLICITANTE", nome: "NIR / Médico Assistente", descricao: "Solicitante de origem" },
   { id: "REGULADOR", nome: "Médico Regulador", descricao: "CORE/MG" },
   { id: "AUTORIDADE", nome: "Autoridade Sanitária", descricao: "Coordenador CORE" },
   { id: "ENFERMEIRO", nome: "Enfermeiro Navegador", descricao: "Busca ativa de leito credenciado" },
@@ -45,16 +38,7 @@ export interface Usuario {
 
 export const USUARIOS_MOCK: Usuario[] = [
   {
-    id: "u1",
-    nome: "Dra. Ana Souza",
-    cpf: "111.111.111-11",
-    matricula: "MG-1001",
-    perfil: "SOLICITANTE",
-    unidade: "HPS João XXIII",
-    email: "ana@saude.mg.gov.br",
-    senha: "core2026",
-  },
-  {
+ main
     id: "u2",
     nome: "Dr. Bruno Lima",
     cpf: "222.222.222-22",
@@ -386,6 +370,7 @@ export interface Solicitacao {
   protocolo: string;
   solicitanteId: string;
   unidadeOrigem: string;
+  cnesUnidadeOrigem?: string;
   macrorregiaoOrigem: Macrorregiao;
   municipioOrigem: string;
   pacienteNome: string;

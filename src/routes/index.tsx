@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCore } from "@/lib/core-store";
-import { HOSPITAIS_CREDENCIADOS, MOTIVO_RECUSA_LABEL } from "@/lib/core-types";
+ main
 import { formatDateTime, timeAgo } from "@/lib/formatters";
 import { StatusBadge } from "@/lib/status-badge";
 
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/")({
 
 const MS_24H = 24 * 60 * 60 * 1000;
 
+ main
 function PainelOperacional() {
   const { solicitacoes } = useCore();
   const agora = Date.now();
@@ -45,9 +46,7 @@ function PainelOperacional() {
   const buscasMacro = solicitacoes.filter((s) => s.status === "BUSCA_MACRO_REGIONAL");
   const prazo24hVencido = buscasMacro.filter((s) => {
     if (!s.buscaIniciadaEm) return false;
-    const temAceiteMacrorregional = s.aceitesHospitais.some(
-      (a) => (a.escopoBusca ?? "MACRO_ORIGEM") !== "ESTADUAL",
-    );
+main
     return !temAceiteMacrorregional && agora - new Date(s.buscaIniciadaEm).getTime() >= MS_24H;
   });
   const aceitesPendentes = solicitacoes.filter(
@@ -61,9 +60,7 @@ function PainelOperacional() {
         new Date(b.contato.dataHoraContato).getTime() -
         new Date(a.contato.dataHoraContato).getTime(),
     );
-  const repescagensPendentes = registrosBusca.filter(
-    ({ contato }) => contato.reacionarHospital && !contato.repescagemRealizada,
-  );
+ main
   const ultimosAceites = solicitacoes
     .flatMap((s) => s.aceitesHospitais.map((aceite) => ({ solicitacao: s, aceite })))
     .sort((a, b) => new Date(b.aceite.aceitoEm).getTime() - new Date(a.aceite.aceitoEm).getTime())
@@ -211,9 +208,7 @@ function PainelOperacional() {
                     <TableCell className="font-mono text-xs">{solicitacao.protocolo}</TableCell>
                     <TableCell className="text-xs">{contato.hospitalNome}</TableCell>
                     <TableCell className="text-xs">{contato.resultado}</TableCell>
-                    <TableCell className="text-xs">
-                      {contato.motivoRecusa ? MOTIVO_RECUSA_LABEL[contato.motivoRecusa] : "—"}
-                    </TableCell>
+ main
                     <TableCell className="text-xs">
                       {formatDateTime(contato.dataHoraContato)}
                     </TableCell>
@@ -245,9 +240,7 @@ function PainelOperacional() {
             <LinhaPendencia
               key={contato.id}
               titulo={contato.hospitalNome}
-              detalhe={`${solicitacao.pacienteNome} • ${contato.motivoRecusa ? MOTIVO_RECUSA_LABEL[contato.motivoRecusa] : "Recontato"}`}
-              meta={
-                contato.repescagemEm ? formatDateTime(contato.repescagemEm) : "Sem data sugerida"
+ main
               }
             />
           ))}
@@ -328,6 +321,7 @@ function hospitalNome(id?: string) {
   return HOSPITAIS_CREDENCIADOS.find((h) => h.id === id)?.nome;
 }
 
+main
 function ResumoItem({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border bg-background p-3">

@@ -61,12 +61,8 @@ function ReguladorPage() {
   const fila = useMemo(
     () =>
       solicitacoes
-        .filter(
-          (s) => s.status === "AGUARDANDO_REGULACAO" || s.status === "AGUARDANDO_VAGA_ZERO",
-        )
-        .sort(
-          (a, b) => GRAVIDADE_META[b.gravidade].peso - GRAVIDADE_META[a.gravidade].peso,
-        ),
+        .filter((s) => s.status === "AGUARDANDO_REGULACAO" || s.status === "AGUARDANDO_VAGA_ZERO")
+        .sort((a, b) => GRAVIDADE_META[b.gravidade].peso - GRAVIDADE_META[a.gravidade].peso),
     [solicitacoes],
   );
 
@@ -118,8 +114,12 @@ function ReguladorPage() {
                         {s.unidadeOrigem}
                         <div className="text-muted-foreground">{s.macrorregiaoOrigem}</div>
                       </TableCell>
-                      <TableCell><StatusBadge status={s.status} /></TableCell>
-                      <TableCell className="text-xs text-muted-foreground">há {timeAgo(s.criadoEm)}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={s.status} />
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        há {timeAgo(s.criadoEm)}
+                      </TableCell>
                       <TableCell>
                         <Button size="sm" onClick={() => setAberta(s)}>
                           <Stethoscope className="h-4 w-4" /> Regular
@@ -130,7 +130,10 @@ function ReguladorPage() {
                 })}
                 {fila.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       Nenhuma solicitação pendente na fila.
                     </TableCell>
                   </TableRow>
@@ -182,7 +185,9 @@ function RegularDialog({
 
   const emitir = () => {
     if (!parecerTecnico.trim() || parecerTecnico.length < 30) {
-      toast.error("Parecer técnico deve descrever o esgotamento de leitos SUS (mín. 30 caracteres).");
+      toast.error(
+        "Parecer técnico deve descrever o esgotamento de leitos SUS (mín. 30 caracteres).",
+      );
       return;
     }
     try {
@@ -223,11 +228,17 @@ function RegularDialog({
         </DialogHeader>
 
         <div className="space-y-3 rounded-md bg-muted/40 p-3 text-sm">
-          <div><strong>Paciente:</strong> {solicitacao.pacienteNome} • CPF {solicitacao.pacienteCpf}</div>
-          <div><strong>Diagnóstico:</strong> {solicitacao.diagnosticoPrincipal} ({solicitacao.cid})</div>
-          <div><strong>Origem:</strong> {solicitacao.unidadeOrigem} • {solicitacao.macrorregiaoOrigem}</div>
+          <div>
+            <strong>Paciente:</strong> {solicitacao.pacienteNome} • CPF {solicitacao.pacienteCpf}
+          </div>
+          <div>
+            <strong>Diagnóstico:</strong> {solicitacao.diagnosticoPrincipal} ({solicitacao.cid})
+          </div>
+          <div>
+            <strong>Origem:</strong> {solicitacao.unidadeOrigem} • {solicitacao.macrorregiaoOrigem}
+          </div>
           <div className="text-xs text-muted-foreground">
-            Justificativa do solicitante: {solicitacao.justificativa}
+            Justificativa da hipótese de compra: {solicitacao.justificativa}
           </div>
         </div>
 
@@ -255,9 +266,15 @@ function RegularDialog({
           <div>
             <Label className="text-xs font-medium">Clínica indicada</Label>
             <Select value={clinica} onValueChange={(v) => setClinica(v as ClinicaMedica)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {CLINICAS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {CLINICAS.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -286,19 +303,25 @@ function RegularDialog({
                 value={motivoRecusa}
                 onChange={(e) => setMotivoRecusa(e.target.value)}
               />
-              <Button variant="destructive" onClick={recusarSol}>Recusar</Button>
+              <Button variant="destructive" onClick={recusarSol}>
+                Recusar
+              </Button>
             </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
           {solicitacao.status === "AGUARDANDO_REGULACAO" && !vagaZero && (
             <Button variant="secondary" onClick={registrarVagaZero}>
               <AlertTriangle className="h-4 w-4" /> Registrar Vaga Zero
             </Button>
           )}
-          <Button onClick={emitir} disabled={!vagaZero}>Emitir Parecer Técnico</Button>
+          <Button onClick={emitir} disabled={!vagaZero}>
+            Emitir Parecer Técnico
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -375,4 +398,3 @@ function BuscaTransferenciaControls({ solicitacao }: { solicitacao: Solicitacao 
     </div>
   );
 }
-

@@ -18,27 +18,27 @@ import { StatusBadge } from "@/lib/status-badge";
 import { PerfilGate } from "@/components/perfil-gate";
 
 export const Route = createFileRoute("/solicitante/")({
-  head: () => ({ meta: [{ title: "Minhas Solicitações — CORE/MG" }] }),
-  component: MinhasSolicitacoes,
+  head: () => ({ meta: [{ title: "Casos cadastrados — CORE/MG" }] }),
+  component: CasosCadastrados,
 });
 
-function MinhasSolicitacoes() {
+function CasosCadastrados() {
   const { solicitacoes, usuarioAtual } = useCore();
 
   return (
-    <PerfilGate permitido={["SOLICITANTE"]}>
+    <PerfilGate permitido={["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE", "GESTAO"]}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Minhas Solicitações</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Casos cadastrados</h1>
             <p className="text-sm text-muted-foreground">
-              Solicitações abertas por {usuarioAtual.nome}. Você não visualiza dados financeiros
-              nem cadastro de prestadores privados.
+              Casos de compra excepcional registrados a partir da avaliação interna na ferramenta
+              estadual.
             </p>
           </div>
           <Button asChild>
             <Link to="/solicitante/nova">
-              <Plus className="h-4 w-4" /> Nova Solicitação
+              <Plus className="h-4 w-4" /> Cadastrar caso
             </Link>
           </Button>
         </div>
@@ -58,7 +58,9 @@ function MinhasSolicitacoes() {
               </TableHeader>
               <TableBody>
                 {solicitacoes
-                  .filter((s) => s.solicitanteId === usuarioAtual.id)
+                  .filter(
+                    (s) => usuarioAtual.perfil === "GESTAO" || s.solicitanteId === usuarioAtual.id,
+                  )
                   .map((s) => {
                     const g = GRAVIDADE_META[s.gravidade];
                     return (
@@ -87,11 +89,16 @@ function MinhasSolicitacoes() {
                       </TableRow>
                     );
                   })}
-                {solicitacoes.filter((s) => s.solicitanteId === usuarioAtual.id).length === 0 && (
+                {solicitacoes.filter(
+                  (s) => usuarioAtual.perfil === "GESTAO" || s.solicitanteId === usuarioAtual.id,
+                ).length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={6}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
                       <FileText className="mx-auto mb-2 h-8 w-8" />
-                      Nenhuma solicitação registrada.
+                      Nenhum caso cadastrado por este perfil.
                     </TableCell>
                   </TableRow>
                 )}
@@ -103,8 +110,8 @@ function MinhasSolicitacoes() {
         <div className="flex items-start gap-2 rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Segregação de funções: este perfil não acessa valores contratados nem dados de
-            hospitais privados credenciados.
+            Fluxo interno: o cadastro é feito pelo médico regulador, autoridade sanitária ou apoio
+            CORE após identificação da hipótese de compra excepcional.
           </span>
         </div>
       </div>

@@ -38,8 +38,9 @@ const seedSolicitacoes: Solicitacao[] = [
   {
     id: "s1",
     protocolo: proximoProtocolo(),
-    solicitanteId: "u1",
+    solicitanteId: "u2",
     unidadeOrigem: "HPS João XXIII",
+    cnesUnidadeOrigem: "0027049",
     macrorregiaoOrigem: "Centro",
     municipioOrigem: "Belo Horizonte",
     pacienteNome: "Maria Aparecida da Silva",
@@ -137,6 +138,8 @@ export interface NovaSolicitacaoInput {
   pacienteNascimento: string;
   macrorregiaoOrigem: Macrorregiao;
   municipioOrigem: string;
+  unidadeOrigem: string;
+  cnesUnidadeOrigem: string;
   diagnosticoPrincipal: string;
   cid: string;
   gravidade: Gravidade;
@@ -150,7 +153,7 @@ export interface NovaSolicitacaoInput {
 const Ctx = createContext<CoreStore | null>(null);
 
 export function CoreProvider({ children }: { children: ReactNode }) {
-  const [usuarioAtualId, setUsuarioAtualId] = useState<string>("u1");
+  const [usuarioAtualId, setUsuarioAtualId] = useState<string>("u2");
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>(seedSolicitacoes);
   const [auditoria, setAuditoria] = useState<RegistroAuditoria[]>([]);
 
@@ -214,12 +217,13 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const criarSolicitacao: CoreStore["criarSolicitacao"] = useCallback(
     (data) => {
-      requirePerfil("SOLICITANTE");
+      requirePerfil(["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"]);
       const nova: Solicitacao = {
         id: uid("s"),
         protocolo: proximoProtocolo(),
         solicitanteId: usuarioAtual.id,
-        unidadeOrigem: usuarioAtual.unidade,
+        unidadeOrigem: data.unidadeOrigem,
+        cnesUnidadeOrigem: data.cnesUnidadeOrigem,
         macrorregiaoOrigem: data.macrorregiaoOrigem,
         municipioOrigem: data.municipioOrigem,
         pacienteNome: data.pacienteNome,
@@ -244,7 +248,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       };
       setSolicitacoes((p) => [nova, ...p]);
       logAudit({
-        acao: "Solicitação criada",
+        acao: "Caso de compra excepcional cadastrado",
         solicitacaoId: nova.id,
         statusDepois: nova.status,
         detalhe: `${nova.diagnosticoPrincipal} (${nova.cid})`,
