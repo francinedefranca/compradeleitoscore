@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCore } from "@/lib/core-store";
- main
+import { HOSPITAIS_CREDENCIADOS } from "@/lib/core-types";
 import { formatDateTime, timeAgo } from "@/lib/formatters";
 import { StatusBadge } from "@/lib/status-badge";
 
@@ -32,19 +32,39 @@ export const Route = createFileRoute("/")({
 
 const MS_24H = 24 * 60 * 60 * 1000;
 
-main
+const MOTIVOS_RECUSA_FALLBACK: Record<string, string> = {
+  SEM_LEITO_DISPONIVEL: "Sem leito disponível",
+  SEM_PERFIL_ASSISTENCIAL: "Sem perfil assistencial",
+  SEM_ESPECIALIDADE: "Sem especialidade",
+  SEM_EQUIPE_DISPONIVEL: "Sem equipe disponível",
+  SEM_RECURSO_DIAGNOSTICO_TERAPEUTICO: "Sem recurso diagnóstico/terapêutico",
+  PACIENTE_INCOMPATIVEL: "Paciente incompatível com o serviço",
+  NAO_ATENDE_TIPO_LEITO: "Não atende ao tipo de leito solicitado",
+  OUTRO: "Outro",
+};
+
 function PainelOperacional() {
   const { solicitacoes } = useCore();
   const agora = Date.now();
 
   const emAndamento = solicitacoes.filter(
-main
+    (s) =>
+      ![
+        "RECUSADO",
+        "INDEFERIDO_AUTORIDADE",
+        "DIRECIONADO_VAGA_ZERO",
+        "DIRECIONADO_LEITO_EXTRA",
+        "CANCELADO_ABSORVIDO_SUS",
+        "INTERNADO",
+      ].includes(s.status),
+  );
+  const avaliacoesPendentes = solicitacoes.filter((s) =>
     ["AGUARDANDO_REGULACAO", "AGUARDANDO_VAGA_ZERO", "PARECER_EMITIDO"].includes(s.status),
   );
   const buscasMacro = solicitacoes.filter((s) => s.status === "BUSCA_MACRO_REGIONAL");
   const prazo24hVencido = buscasMacro.filter((s) => {
     if (!s.buscaIniciadaEm) return false;
-main
+    const temAceiteMacrorregional = s.aceitesHospitais.some(aceiteMacrorregional);
     return !temAceiteMacrorregional && agora - new Date(s.buscaIniciadaEm).getTime() >= MS_24H;
   });
   const aceitesPendentes = solicitacoes.filter(
@@ -58,7 +78,7 @@ main
         new Date(b.contato.dataHoraContato).getTime() -
         new Date(a.contato.dataHoraContato).getTime(),
     );
-main
+  const repescagensPendentes = registrosBusca.filter(({ contato }) => repescagemPendente(contato));
   const ultimosAceites = solicitacoes
     .flatMap((s) => s.aceitesHospitais.map((aceite) => ({ solicitacao: s, aceite })))
     .sort((a, b) => new Date(b.aceite.aceitoEm).getTime() - new Date(a.aceite.aceitoEm).getTime())
@@ -98,7 +118,8 @@ main
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <AtencaoCard
           icon={FileText}
-main
+          title="Avaliações sanitárias pendentes"
+          value={avaliacoesPendentes.length}
           to="/regulador"
           tone="info"
         />
@@ -205,7 +226,7 @@ main
                     <TableCell className="font-mono text-xs">{solicitacao.protocolo}</TableCell>
                     <TableCell className="text-xs">{contato.hospitalNome}</TableCell>
                     <TableCell className="text-xs">{contato.resultado}</TableCell>
-main
+                    <TableCell className="text-xs">{motivoRecusaLabel(contato)}</TableCell>
                     <TableCell className="text-xs">
                       {formatDateTime(contato.dataHoraContato)}
                     </TableCell>
@@ -237,7 +258,9 @@ main
             <LinhaPendencia
               key={contato.id}
               titulo={contato.hospitalNome}
-main
+              detalhe={`${solicitacao.pacienteNome} • ${motivoRecusaLabel(contato)}`}
+              meta={
+                repescagemEm(contato) ? formatDateTime(repescagemEm(contato)!) : "Sem data sugerida"
               }
             />
           ))}
@@ -318,7 +341,31 @@ function hospitalNome(id?: string) {
   return HOSPITAIS_CREDENCIADOS.find((h) => h.id === id)?.nome;
 }
 
- main
+function aceiteMacrorregional(aceite: unknown) {
+  if (!aceite || typeof aceite !== "object") return true;
+  if (!("escopoBusca" in aceite)) return true;
+  return aceite.escopoBusca !== "ESTADUAL";
+}
+
+function motivoRecusaLabel(contato: unknown) {
+  if (!contato || typeof contato !== "object" || !("motivoRecusa" in contato)) return "—";
+  const motivo = contato.motivoRecusa;
+  if (typeof motivo !== "string") return "—";
+  return MOTIVOS_RECUSA_FALLBACK[motivo] ?? motivo;
+}
+
+function repescagemPendente(contato: unknown) {
+  if (!contato || typeof contato !== "object") return false;
+  const reacionar = "reacionarHospital" in contato && Boolean(contato.reacionarHospital);
+  const realizada = "repescagemRealizada" in contato && Boolean(contato.repescagemRealizada);
+  return reacionar && !realizada;
+}
+
+function repescagemEm(contato: unknown) {
+  if (!contato || typeof contato !== "object" || !("repescagemEm" in contato)) return undefined;
+  return typeof contato.repescagemEm === "string" ? contato.repescagemEm : undefined;
+}
+
 function ResumoItem({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-md border bg-background p-3">

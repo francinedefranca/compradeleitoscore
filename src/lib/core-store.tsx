@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps, react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import {
   USUARIOS_MOCK,
@@ -293,12 +294,13 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const recusar: CoreStore["recusar"] = useCallback(
     (id, motivo) => {
-main
+      requirePerfil("AUTORIDADE");
+      patch(id, (s) => ({ ...s, status: "INDEFERIDO_AUTORIDADE" }));
       logAudit({
         acao: "Solicitação recusada",
         detalhe: motivo,
         solicitacaoId: id,
-main
+        statusDepois: "INDEFERIDO_AUTORIDADE",
       });
     },
     [logAudit, patch],

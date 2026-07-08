@@ -26,7 +26,9 @@ export const Route = createFileRoute("/regulador")({
 function ReguladorPage() {
   const { solicitacoes, usuarioAtual } = useCore();
 
-main
+  const meusCasos = useMemo(
+    () => solicitacoes.filter((s) => s.solicitanteId === usuarioAtual.id),
+    [solicitacoes, usuarioAtual.id],
   );
 
   return (
@@ -84,7 +86,6 @@ main
                         {s.unidadeOrigem}
                         <div className="text-muted-foreground">{s.macrorregiaoOrigem}</div>
                       </TableCell>
- main
                       <TableCell>
                         <span className={`rounded px-2 py-0.5 text-xs font-semibold ${g.classe}`}>
                           {g.label}
@@ -103,7 +104,11 @@ main
                 {meusCasos.length === 0 && (
                   <TableRow>
                     <TableCell
- main
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
+                      <Stethoscope className="mx-auto mb-2 h-8 w-8" />
+                      Nenhum caso cadastrado por você.
                     </TableCell>
                   </TableRow>
                 )}

@@ -36,7 +36,8 @@ function PrestadoresPage() {
                 <TableHead>Município</TableHead>
                 <TableHead>Macrorregião</TableHead>
                 <TableHead>E-mail principal</TableHead>
- main
+                <TableHead>Telefone</TableHead>
+                <TableHead>Leitos ofertados</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Ativo?</TableHead>
               </TableRow>
@@ -51,7 +52,10 @@ function PrestadoresPage() {
                   <TableCell>{h.municipio}</TableCell>
                   <TableCell>{h.macrorregiao}</TableCell>
                   <TableCell className="text-xs">{h.emailPrincipal}</TableCell>
- main
+                  <TableCell className="text-xs">{h.telefone}</TableCell>
+                  <TableCell className="max-w-[220px] text-xs">
+                    {h.clinicasDisponiveis.join(", ")}
+                  </TableCell>
                   <TableCell className="text-xs">{h.tipoPrestador}</TableCell>
                   <TableCell className="text-xs">{h.ativo ? "Sim" : "Não"}</TableCell>
                 </TableRow>

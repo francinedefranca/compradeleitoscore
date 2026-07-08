@@ -31,7 +31,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCore } from "@/lib/core-store";
- main
+import {
+  CLINICAS,
+  GRAVIDADE_META,
+  USUARIOS_MOCK,
+  type ClinicaMedica,
+  type Solicitacao,
+} from "@/lib/core-types";
 import { formatDateTime } from "@/lib/formatters";
 import { StatusBadge } from "@/lib/status-badge";
 
@@ -65,7 +71,7 @@ function AutoridadePage() {
     <PerfilGate permitido={["AUTORIDADE"]}>
       <div className="space-y-4">
         <div>
- main
+          <h1 className="text-2xl font-bold tracking-tight">Avaliação Sanitária</h1>
           <p className="text-sm text-muted-foreground">
             A autoridade sanitária avalia os dados clínicos cadastrados e decide se o desfecho é
             compra excepcional, Vaga Zero, Leito Extra SUS ou indeferimento.
@@ -119,7 +125,10 @@ function AutoridadePage() {
                 {fila.length === 0 && (
                   <TableRow>
                     <TableCell
-main
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
+                      Nenhum caso aguardando decisão da autoridade sanitária.
                     </TableCell>
                   </TableRow>
                 )}
@@ -147,7 +156,7 @@ function AvaliarDialog({
     solicitacao.parecer?.clinicaIndicada ?? "UTI Adulto",
   );
   const [obs, setObs] = useState("");
-main
+  const cadastrador = USUARIOS_MOCK.find((u) => u.id === solicitacao.solicitanteId);
   const gravidade = GRAVIDADE_META[solicitacao.gravidade];
 
   const salvar = () => {
@@ -171,7 +180,62 @@ main
           <DialogTitle>Avaliação Sanitária — {solicitacao.protocolo}</DialogTitle>
         </DialogHeader>
 
- main
+        <div className="grid gap-4 rounded-md border bg-card p-4 text-sm md:grid-cols-2">
+          <CampoRotulado label="Cadastrado por" valor={cadastrador?.nome ?? "—"} />
+          <CampoRotulado label="Unidade solicitante/origem" valor={solicitacao.unidadeOrigem} />
+          <CampoRotulado label="CNES da unidade" valor={solicitacao.cnesUnidadeOrigem ?? "—"} />
+          <CampoRotulado
+            label="Município / macro"
+            valor={`${solicitacao.municipioOrigem} • ${solicitacao.macrorregiaoOrigem}`}
+          />
+          <CampoRotulado label="Paciente" valor={solicitacao.pacienteNome} />
+          <CampoRotulado
+            label="CPF/CNS"
+            valor={solicitacao.pacienteCpf || solicitacao.pacienteCns || "—"}
+          />
+          <CampoRotulado label="Gravidade" valor={gravidade.label} />
+          <CampoRotulado
+            label="Diagnóstico / CID"
+            valor={`${solicitacao.diagnosticoPrincipal} (${solicitacao.cid})`}
+          />
+          <CampoRotulado
+            label="Sinais vitais"
+            valor={`PA ${solicitacao.sinaisVitais.pa}; FC ${solicitacao.sinaisVitais.fc}; FR ${solicitacao.sinaisVitais.fr}; SpO2 ${solicitacao.sinaisVitais.spo2}; T ${solicitacao.sinaisVitais.temp}`}
+          />
+          <CampoRotulado label="Descrição clínica trazida" valor={solicitacao.justificativa} />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <Label className="text-xs font-medium">Decisão da autoridade sanitária</Label>
+            <Select value={decisao} onValueChange={(v) => setDecisao(v as Decisao)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(DECISAO_LABEL) as Decisao[]).map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {DECISAO_LABEL[d]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs font-medium">Tipo de leito, se houver compra</Label>
+            <Select value={clinica} onValueChange={(v) => setClinica(v as ClinicaMedica)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CLINICAS.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div>
@@ -180,14 +244,16 @@ main
         </div>
 
         <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
- main
+          Para compra excepcional, a decisão gera autorização para a enfermagem iniciar a busca na
+          rede credenciada. Para Vaga Zero ou Leito Extra SUS, o caso sai deste fluxo operacional.
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
- main
+          <Button onClick={salvar}>
+            <ShieldCheck className="h-4 w-4" /> Registrar decisão
           </Button>
         </DialogFooter>
       </DialogContent>
