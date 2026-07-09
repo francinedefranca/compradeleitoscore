@@ -139,7 +139,18 @@ interface CoreStore {
     },
   ) => void;
   registrarInternacao: (id: string) => void;
-  enviarFaturasParaCompras: (id: string, observacoes: string) => void;
+  enviarFaturasParaCompras: (
+    id: string,
+    dados: {
+      observacoes: string;
+      faturaHospitalRecebida: boolean;
+      checkLaudoPaciente: boolean;
+      checkTermoAcionamento: boolean;
+      checkTermoEsgotamentoSus: boolean;
+      checkDecisaoJudicial?: boolean;
+    },
+  ) => void;
+  registrarPagamento: (id: string, observacoes: string) => void;
 }
 
 export interface NovaSolicitacaoInput {
