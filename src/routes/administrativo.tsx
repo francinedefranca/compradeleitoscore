@@ -267,35 +267,73 @@ function AdministrativoPage() {
             </CardContent>
           </Card>
         )}
+          </>
+        )}
 
-        {pagamento.length > 0 && (
+        {mostrarBlocoCompras && pagamento.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Em processo financeiro</CardTitle>
+              <CardTitle className="text-base">
+                Pacotes recebidos do Administrativo CORE • Liquidação e pagamento
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                {pagamento.map((s) => (
-                  <li
-                    key={s.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded border bg-card p-2"
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {s.protocolo} — {s.pacienteNome}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        SEI {s.numeroSeiProcesso ?? "—"} • enviado em{" "}
-                        {s.envioFaturas && formatDateTime(s.envioFaturas.enviadoEm)}
-                      </div>
-                    </div>
-                    <StatusBadge status={s.status} />
-                  </li>
-                ))}
-              </ul>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Protocolo / SEI</TableHead>
+                    <TableHead>Paciente</TableHead>
+                    <TableHead>Hospital</TableHead>
+                    <TableHead>Documentos</TableHead>
+                    <TableHead>Recebido em</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagamento.map((s) => {
+                    const envio = s.envioFaturas;
+                    return (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-mono text-xs">
+                          <div>{s.protocolo}</div>
+                          <div className="text-muted-foreground">{s.numeroSeiProcesso ?? "—"}</div>
+                        </TableCell>
+                        <TableCell className="text-xs">{s.pacienteNome}</TableCell>
+                        <TableCell className="text-xs">{hospitalDoCaso(s)?.nome ?? "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          <ul className="space-y-0.5">
+                            <li>Laudo: {envio?.checkLaudoPaciente ? "✓" : "—"}</li>
+                            <li>T. Acionamento: {envio?.checkTermoAcionamento ? "✓" : "—"}</li>
+                            <li>T. Esgot. SUS: {envio?.checkTermoEsgotamentoSus ? "✓" : "—"}</li>
+                            {s.judicial?.numeroProcesso && (
+                              <li>Decisão Judicial: {envio?.checkDecisaoJudicial ? "✓" : "—"}</li>
+                            )}
+                            <li>Fatura hospital: {envio?.faturaHospitalRecebida ? "✓" : "—"}</li>
+                          </ul>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {envio && formatDateTime(envio.enviadoEm)}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={s.status} />
+                        </TableCell>
+                        <TableCell>
+                          {somenteLeitura ? (
+                            <span className="text-xs text-muted-foreground">Somente leitura</span>
+                          ) : (
+                            <RegistrarPagamentoBotao id={s.id} />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
+
 
         {seiAberta && <SeiDialog solicitacao={seiAberta} onClose={() => setSeiAberta(null)} />}
         {compraAberta && (
