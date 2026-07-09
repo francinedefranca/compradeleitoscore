@@ -93,7 +93,10 @@ function AdministrativoPage() {
         </div>
 
 
+        {mostrarBlocosCore && (
+          <>
         <Card>
+
           <CardHeader>
             <CardTitle className="text-base">Aguardando confirmação de internação</CardTitle>
           </CardHeader>
