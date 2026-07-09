@@ -44,6 +44,8 @@ function hospitalDoCaso(s: Solicitacao) {
 function AdministrativoPage() {
   const { solicitacoes, usuarioAtual } = useCore();
   const somenteLeitura = usuarioAtual.perfil === "GESTAO";
+  const isCore = usuarioAtual.perfil === "ADMINISTRATIVO_CORE";
+  const isCompras = usuarioAtual.perfil === "ADMINISTRATIVO";
 
   const aguardandoInternacao = useMemo(
     () => solicitacoes.filter((s) => s.status === "LEITO_CONFIRMADO_ENFERMAGEM"),
@@ -66,9 +68,14 @@ function AdministrativoPage() {
     [solicitacoes],
   );
 
+  // CORE administra tudo até enviar; Compras vê apenas o pacote recebido.
+  const mostrarBlocosCore = !isCompras;
+  const mostrarBlocoCompras = !isCore;
+
   const [seiAberta, setSeiAberta] = useState<Solicitacao | null>(null);
   const [compraAberta, setCompraAberta] = useState<Solicitacao | null>(null);
   const [faturaAberta, setFaturaAberta] = useState<Solicitacao | null>(null);
+
 
   return (
     <PerfilGate permitido={["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"]}>
