@@ -382,6 +382,13 @@ export interface Judicial {
   observacoes: string;
 }
 
+export interface TriagemEnfermagem {
+  contatoOrigem: string;
+  observacoes: string;
+  registradoEm: string;
+  enfermeiroId: string;
+}
+
 export interface Cancelamento {
   motivo: string;
   canceladoEm: string;
@@ -422,6 +429,7 @@ export interface Solicitacao {
   aceitesHospitais: AceiteHospital[];
   escolhaEnfermagem?: EscolhaEnfermagem;
   historicoContatos?: HistoricoContato[];
+  triagemEnfermagem?: TriagemEnfermagem;
   statusTransferencia?: StatusTransferencia;
 
   processoSei?: ProcessoSei;

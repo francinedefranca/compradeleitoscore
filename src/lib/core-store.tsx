@@ -76,6 +76,10 @@ interface CoreStore {
   loginPorEmail: (email: string, senha: string) => { ok: true } | { ok: false; erro: string };
   criarSolicitacao: (data: NovaSolicitacaoInput) => Solicitacao;
   recusar: (id: string, motivo: string) => void;
+  registrarTriagemEnfermagem: (
+    id: string,
+    dados: { contatoOrigem: string; observacoes: string },
+  ) => void;
   decidirAutoridade: (
     id: string,
     dados: {
@@ -224,7 +228,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const criarSolicitacao: CoreStore["criarSolicitacao"] = useCallback(
     (data) => {
-      requirePerfil(["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO_CORE"]);
+      requirePerfil(["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       const nova: Solicitacao = {
         id: uid("s"),
         protocolo: proximoProtocolo(),
@@ -283,6 +287,33 @@ export function CoreProvider({ children }: { children: ReactNode }) {
       });
     },
     [logAudit, patch],
+  );
+
+  const registrarTriagemEnfermagem: CoreStore["registrarTriagemEnfermagem"] = useCallback(
+    (id, dados) => {
+      requirePerfil("ENFERMEIRO");
+      if (dados.contatoOrigem.trim().length < 3) {
+        throw new Error("Informe o contato realizado pela enfermagem.");
+      }
+      if (dados.observacoes.trim().length < 10) {
+        throw new Error("Descreva a observação da triagem de enfermagem.");
+      }
+      patch(id, (s) => ({
+        ...s,
+        triagemEnfermagem: {
+          contatoOrigem: dados.contatoOrigem,
+          observacoes: dados.observacoes,
+          registradoEm: nowIso(),
+          enfermeiroId: usuarioAtual.id,
+        },
+      }));
+      logAudit({
+        acao: "Triagem de enfermagem registrada",
+        detalhe: dados.contatoOrigem,
+        solicitacaoId: id,
+      });
+    },
+    [logAudit, patch, usuarioAtual],
   );
 
   const decidirAutoridade: CoreStore["decidirAutoridade"] = useCallback(
@@ -620,6 +651,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     loginPorEmail,
     criarSolicitacao,
     recusar,
+    registrarTriagemEnfermagem,
     decidirAutoridade,
     autorizarCompra,
     atualizarEscopoBusca,

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PenLine, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, PenLine, ShieldCheck } from "lucide-react";
 
 import { PerfilGate } from "@/components/perfil-gate";
 import { Button } from "@/components/ui/button";
@@ -56,8 +56,10 @@ const DECISAO_LABEL: Record<Decisao, string> = {
 };
 
 function AutoridadePage() {
-  const { solicitacoes } = useCore();
+  const { solicitacoes, usuarioAtual } = useCore();
+  const autoridade = usuarioAtual.perfil === "AUTORIDADE";
   const [aberta, setAberta] = useState<Solicitacao | null>(null);
+  const [triagemAberta, setTriagemAberta] = useState<Solicitacao | null>(null);
 
   const fila = useMemo(
     () =>
@@ -68,13 +70,13 @@ function AutoridadePage() {
   );
 
   return (
-    <PerfilGate permitido={["AUTORIDADE"]}>
+    <PerfilGate permitido={["AUTORIDADE", "ENFERMEIRO"]}>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Avaliação Sanitária</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Triagem / Avaliação Sanitária</h1>
           <p className="text-sm text-muted-foreground">
-            A autoridade sanitária avalia os dados clínicos cadastrados e decide se o desfecho é
-            compra excepcional, Vaga Zero, Leito Extra SUS ou indeferimento.
+            A autoridade sanitária registra o parecer técnico e a decisão. A enfermagem registra
+            contatos e observações operacionais da triagem, sem substituir o parecer sanitário.
           </p>
         </div>
 
@@ -115,9 +117,15 @@ function AutoridadePage() {
                         <StatusBadge status={s.status} />
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" onClick={() => setAberta(s)}>
-                          <PenLine className="h-4 w-4" /> Avaliar
-                        </Button>
+                        {autoridade ? (
+                          <Button size="sm" onClick={() => setAberta(s)}>
+                            <PenLine className="h-4 w-4" /> Parecer técnico
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="secondary" onClick={() => setTriagemAberta(s)}>
+                            <ClipboardCheck className="h-4 w-4" /> Contato/triagem
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -138,6 +146,12 @@ function AutoridadePage() {
         </Card>
 
         {aberta && <AvaliarDialog solicitacao={aberta} onClose={() => setAberta(null)} />}
+        {triagemAberta && (
+          <TriagemEnfermagemDialog
+            solicitacao={triagemAberta}
+            onClose={() => setTriagemAberta(null)}
+          />
+        )}
       </div>
     </PerfilGate>
   );
@@ -203,6 +217,10 @@ function AvaliarDialog({
             valor={`PA ${solicitacao.sinaisVitais.pa}; FC ${solicitacao.sinaisVitais.fc}; FR ${solicitacao.sinaisVitais.fr}; SpO2 ${solicitacao.sinaisVitais.spo2}; T ${solicitacao.sinaisVitais.temp}`}
           />
           <CampoRotulado label="Descrição clínica trazida" valor={solicitacao.justificativa} />
+          <CampoRotulado
+            label="Triagem/contato da enfermagem"
+            valor={solicitacao.triagemEnfermagem?.observacoes ?? "Ainda não registrado"}
+          />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
@@ -254,6 +272,80 @@ function AvaliarDialog({
           </Button>
           <Button onClick={salvar}>
             <ShieldCheck className="h-4 w-4" /> Registrar decisão
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TriagemEnfermagemDialog({
+  solicitacao,
+  onClose,
+}: {
+  solicitacao: Solicitacao;
+  onClose: () => void;
+}) {
+  const { registrarTriagemEnfermagem } = useCore();
+  const [contatoOrigem, setContatoOrigem] = useState(
+    solicitacao.triagemEnfermagem?.contatoOrigem ?? "",
+  );
+  const [observacoes, setObservacoes] = useState(solicitacao.triagemEnfermagem?.observacoes ?? "");
+
+  const salvar = () => {
+    try {
+      registrarTriagemEnfermagem(solicitacao.id, { contatoOrigem, observacoes });
+      toast.success("Triagem de enfermagem registrada.");
+      onClose();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Triagem de enfermagem — {solicitacao.protocolo}</DialogTitle>
+        </DialogHeader>
+
+        <div className="rounded-md border bg-card p-3 text-sm">
+          <div className="font-medium">{solicitacao.pacienteNome}</div>
+          <div className="text-xs text-muted-foreground">
+            {solicitacao.unidadeOrigem} • {solicitacao.macrorregiaoOrigem} • {solicitacao.cid}
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs font-medium">Contato realizado pela enfermagem</Label>
+          <Textarea
+            rows={2}
+            value={contatoOrigem}
+            onChange={(e) => setContatoOrigem(e.target.value)}
+            placeholder="Ex.: contato telefônico/e-mail com unidade de origem para complementar laudo, exames ou dados operacionais."
+          />
+        </div>
+        <div>
+          <Label className="text-xs font-medium">Observações da triagem de enfermagem</Label>
+          <Textarea
+            rows={4}
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
+            placeholder="Registre informações objetivas do contato, pendências documentais e encaminhamentos operacionais."
+          />
+        </div>
+
+        <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
+          Este registro é operacional. O parecer técnico e a decisão de compra, vaga zero, leito
+          extra ou indeferimento continuam sendo exclusivos da autoridade sanitária.
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={salvar}>
+            <ClipboardCheck className="h-4 w-4" /> Registrar triagem
           </Button>
         </DialogFooter>
       </DialogContent>
