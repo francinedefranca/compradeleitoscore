@@ -714,6 +714,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     registrarCompra,
     registrarInternacao,
     enviarFaturasParaCompras,
+    registrarPagamento,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
