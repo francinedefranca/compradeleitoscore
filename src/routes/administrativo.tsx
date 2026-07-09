@@ -81,12 +81,17 @@ function AdministrativoPage() {
     <PerfilGate permitido={["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"]}>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Administrativo CORE / SEI</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {isCompras ? "Setor de Compras / Pagamentos" : "Administrativo CORE / SEI"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            O SEI e o faturamento começam somente após confirmação da internação do paciente. Gestão
-            acessa esta tela em modo de visualização.
+            {isCompras
+              ? "Pacotes documentais recebidos do Administrativo CORE para liquidação e pagamento."
+              : "O Administrativo CORE confirma internação, acompanha as buscas, recebe as faturas dos hospitais e envia o pacote documental completo (laudo, termo de acionamento, termo de esgotamento SUS e decisão judicial, quando houver) para o Setor de Compras."}
+            {somenteLeitura && " Gestão acessa esta tela em modo de visualização."}
           </p>
         </div>
+
 
         <Card>
           <CardHeader>
