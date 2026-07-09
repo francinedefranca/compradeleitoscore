@@ -635,23 +635,59 @@ export function CoreProvider({ children }: { children: ReactNode }) {
   );
 
   const enviarFaturasParaCompras: CoreStore["enviarFaturasParaCompras"] = useCallback(
-    (id, observacoes) => {
-      requirePerfil(["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
-      patch(id, (s) => ({
-        ...s,
-        faturasEnviadasCompras: true,
-        envioFaturas: { enviadoEm: nowIso(), enviadoPorId: usuarioAtual.id, observacoes },
-        status: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
-      }));
+    (id, dados) => {
+      requirePerfil(["ADMINISTRATIVO_CORE"]);
+      patch(id, (s) => {
+        const exigeJudicial = Boolean(s.judicial?.numeroProcesso);
+        if (
+          !dados.faturaHospitalRecebida ||
+          !dados.checkLaudoPaciente ||
+          !dados.checkTermoAcionamento ||
+          !dados.checkTermoEsgotamentoSus ||
+          (exigeJudicial && !dados.checkDecisaoJudicial)
+        ) {
+          throw new Error(
+            "Confirme o recebimento da fatura e anexe todos os documentos obrigatórios.",
+          );
+        }
+        return {
+          ...s,
+          faturasEnviadasCompras: true,
+          envioFaturas: {
+            enviadoEm: nowIso(),
+            enviadoPorId: usuarioAtual.id,
+            observacoes: dados.observacoes,
+            faturaHospitalRecebida: dados.faturaHospitalRecebida,
+            checkLaudoPaciente: dados.checkLaudoPaciente,
+            checkTermoAcionamento: dados.checkTermoAcionamento,
+            checkTermoEsgotamentoSus: dados.checkTermoEsgotamentoSus,
+            checkDecisaoJudicial: exigeJudicial ? dados.checkDecisaoJudicial : undefined,
+          },
+          status: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
+        };
+      });
       logAudit({
-        acao: "Faturas encaminhadas",
-        detalhe: observacoes,
+        acao: "Pacote documental enviado ao Setor de Compras",
+        detalhe: dados.observacoes,
         solicitacaoId: id,
         statusDepois: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
       });
     },
     [logAudit, patch, usuarioAtual],
   );
+
+  const registrarPagamento: CoreStore["registrarPagamento"] = useCallback(
+    (id, observacoes) => {
+      requirePerfil(["ADMINISTRATIVO"]);
+      logAudit({
+        acao: "Pagamento registrado pelo Setor de Compras",
+        detalhe: observacoes,
+        solicitacaoId: id,
+      });
+    },
+    [logAudit],
+  );
+
 
   const value: CoreStore = {
     usuarios: USUARIOS_MOCK,
