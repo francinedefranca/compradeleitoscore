@@ -1,4 +1,7 @@
-@@ -6,110 +6,130 @@ import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Phone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,26 +42,34 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
 
   const [hospitalNome, setHospitalNome] = useState("");
   const [dataHora, setDataHora] = useState(() =>
- main
     new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 16),
   );
   const [canal, setCanal] = useState<CanalContato>("TELEFONE");
   const [resultado, setResultado] = useState<ResultadoContato>("SEM_RESPOSTA");
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa>("SEM_LEITO_DISPONIVEL");
   const [justificativaRecusa, setJustificativaRecusa] = useState("");
- main
-  const [escopo, setEscopo] = useState<EscopoBusca>(solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM");
+  const [escopo, setEscopo] = useState<EscopoBusca>(
+    solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM",
+  );
 
   const salvar = () => {
+    if (!hospitalNome.trim()) {
+      toast.error("Informe o hospital contatado.");
+      return;
+    }
+    if (resultado === "RECUSA" && !justificativaRecusa.trim()) {
+      toast.error("Justificativa é obrigatória em caso de recusa.");
+      return;
+    }
     try {
       registrarContato(solicitacao.id, {
         hospitalNome: hospitalNome.trim(),
         dataHoraContato: new Date(dataHora).toISOString(),
         canal,
         resultado,
-> main
         motivoRecusa: resultado === "RECUSA" ? motivoRecusa : undefined,
-        justificativaRecusa: resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
+        justificativaRecusa:
+          resultado === "RECUSA" ? justificativaRecusa.trim() : undefined,
         escopoBusca: escopo,
       });
       toast.success("Tentativa de contato registrada.");
@@ -78,24 +89,111 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* ... (Mantenha o seu formulário aqui conforme estava no original) ... */}
-        {resultado === "RECUSA" && (
+        <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <Label className="text-xs font-medium">Motivo padronizado da recusa</Label>
-            <Select value={motivoRecusa} onValueChange={(v) => setMotivoRecusa(v as MotivoRecusa)}>
+            <Label className="text-xs font-medium">Hospital contatado</Label>
+            <Input
+              value={hospitalNome}
+              onChange={(e) => setHospitalNome(e.target.value)}
+              placeholder="Nome do hospital"
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium">Data/Hora do contato</Label>
+            <Input
+              type="datetime-local"
+              value={dataHora}
+              onChange={(e) => setDataHora(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-medium">Canal</Label>
+            <Select value={canal} onValueChange={(v) => setCanal(v as CanalContato)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(MOTIVO_RECUSA_LABEL) as MotivoRecusa[]).map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {MOTIVO_RECUSA_LABEL[m]}
+                {(Object.keys(CANAL_CONTATO_LABEL) as CanalContato[]).map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {CANAL_CONTATO_LABEL[c]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label className="text-xs font-medium">Escopo da busca</Label>
+            <Select value={escopo} onValueChange={(v) => setEscopo(v as EscopoBusca)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ESCOPOS_BUSCA.map((e) => (
+                  <SelectItem key={e} value={e}>
+                    {ESCOPO_BUSCA_LABEL[e]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs font-medium">Resultado</Label>
+            <Select
+              value={resultado}
+              onValueChange={(v) => setResultado(v as ResultadoContato)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(RESULTADO_CONTATO_LABEL) as ResultadoContato[]).map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {RESULTADO_CONTATO_LABEL[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {resultado === "RECUSA" && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <Label className="text-xs font-medium">Motivo padronizado da recusa</Label>
+              <Select
+                value={motivoRecusa}
+                onValueChange={(v) => setMotivoRecusa(v as MotivoRecusa)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(MOTIVO_RECUSA_LABEL) as MotivoRecusa[]).map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {MOTIVO_RECUSA_LABEL[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-medium">Justificativa técnica</Label>
+              <Textarea
+                value={justificativaRecusa}
+                onChange={(e) => setJustificativaRecusa(e.target.value)}
+                placeholder="Descreva a justificativa da recusa"
+                rows={2}
+              />
+            </div>
+          </div>
         )}
+
+        <div className="flex justify-end">
+          <Button size="sm" onClick={salvar}>
+            Registrar contato
+          </Button>
+        </div>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -113,7 +211,6 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
                     <TableCell className="text-xs">{formatDateTime(h.dataHoraContato)}</TableCell>
                     <TableCell className="text-xs">{h.hospitalNome}</TableCell>
                     <TableCell className="text-xs">{ESCOPO_BUSCA_LABEL[h.escopoBusca]}</TableCell>
- main
                     <TableCell className="text-xs">
                       {RESULTADO_CONTATO_LABEL[h.resultado]}
                     </TableCell>
@@ -121,7 +218,6 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
                 ))
               ) : (
                 <TableRow>
- main
                   <TableCell colSpan={4} className="text-center text-xs">
                     Nenhum contato registrado.
                   </TableCell>
