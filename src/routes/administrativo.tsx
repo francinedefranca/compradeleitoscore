@@ -731,20 +731,5 @@ function RegistrarPagamentoBotao({ id }: { id: string }) {
   );
 }
 
-function CheckItem({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-xs">
-      <Checkbox checked={checked} onCheckedChange={(v) => onChange(Boolean(v))} />
-      <span>{label}</span>
-    </label>
-  );
-}
+
 
