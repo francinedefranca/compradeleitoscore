@@ -35,6 +35,11 @@ function PrestadoresPage() {
                 <TableHead>CNES</TableHead>
                 <TableHead>Município</TableHead>
                 <TableHead>Macrorregião</TableHead>
+                <TableHead>E-mail principal</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Leitos ofertados</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Ativo?</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -46,6 +51,13 @@ function PrestadoresPage() {
                   <TableCell className="font-mono text-xs">{h.cnes}</TableCell>
                   <TableCell>{h.municipio}</TableCell>
                   <TableCell>{h.macrorregiao}</TableCell>
+                  <TableCell className="text-xs">{h.emailPrincipal}</TableCell>
+                  <TableCell className="text-xs">{h.telefone}</TableCell>
+                  <TableCell className="max-w-[220px] text-xs">
+                    {h.clinicasDisponiveis.join(", ")}
+                  </TableCell>
+                  <TableCell className="text-xs">{h.tipoPrestador}</TableCell>
+                  <TableCell className="text-xs">{h.ativo ? "Sim" : "Não"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

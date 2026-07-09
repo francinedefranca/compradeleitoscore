@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, Lock, PenLine } from "lucide-react";
+import { ClipboardCheck, PenLine, ShieldCheck } from "lucide-react";
 
+import { PerfilGate } from "@/components/perfil-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -13,6 +14,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -22,32 +30,53 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PerfilGate } from "@/components/perfil-gate";
 import { useCore } from "@/lib/core-store";
-import { USUARIOS_MOCK, type Solicitacao } from "@/lib/core-types";
+import {
+  CLINICAS,
+  GRAVIDADE_META,
+  USUARIOS_MOCK,
+  type ClinicaMedica,
+  type Solicitacao,
+} from "@/lib/core-types";
 import { formatDateTime } from "@/lib/formatters";
+import { StatusBadge } from "@/lib/status-badge";
 
 export const Route = createFileRoute("/autoridade")({
-  head: () => ({ meta: [{ title: "Homologação — Autoridade Sanitária" }] }),
+  head: () => ({ meta: [{ title: "Avaliação Sanitária — CORE/MG" }] }),
   component: AutoridadePage,
 });
 
+type Decisao = "COMPRA_LEITOS" | "VAGA_ZERO" | "LEITO_EXTRA" | "INDEFERIR";
+
+const DECISAO_LABEL: Record<Decisao, string> = {
+  COMPRA_LEITOS: "Compra excepcional de leitos",
+  VAGA_ZERO: "Direcionar para Vaga Zero",
+  LEITO_EXTRA: "Direcionar para Leito Extra SUS",
+  INDEFERIR: "Indeferir compra excepcional",
+};
+
 function AutoridadePage() {
   const { solicitacoes, usuarioAtual } = useCore();
+  const autoridade = usuarioAtual.perfil === "AUTORIDADE";
   const [aberta, setAberta] = useState<Solicitacao | null>(null);
+  const [triagemAberta, setTriagemAberta] = useState<Solicitacao | null>(null);
 
   const fila = useMemo(
-    () => solicitacoes.filter((s) => s.status === "PARECER_EMITIDO"),
+    () =>
+      solicitacoes.filter((s) =>
+        ["AGUARDANDO_REGULACAO", "AGUARDANDO_VAGA_ZERO", "PARECER_EMITIDO"].includes(s.status),
+      ),
     [solicitacoes],
   );
 
   return (
-    <PerfilGate permitido={["AUTORIDADE"]}>
+    <PerfilGate permitido={["AUTORIDADE", "ENFERMEIRO"]}>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Homologação de Compra Extraordinária</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Triagem / Avaliação Sanitária</h1>
           <p className="text-sm text-muted-foreground">
-            Assinatura eletrônica do Termo de Acionamento pela Autoridade Sanitária.
+            A autoridade sanitária registra o parecer técnico e a decisão. A enfermagem registra
+            contatos e observações operacionais da triagem, sem substituir o parecer sanitário.
           </p>
         </div>
 
@@ -58,36 +87,43 @@ function AutoridadePage() {
                 <TableRow>
                   <TableHead>Protocolo</TableHead>
                   <TableHead>Paciente</TableHead>
-                  <TableHead>Clínica indicada</TableHead>
-                  <TableHead>Parecer emitido por</TableHead>
-                  <TableHead>Data do parecer</TableHead>
+                  <TableHead>Documento</TableHead>
+                  <TableHead>Origem</TableHead>
+                  <TableHead>Gravidade</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {fila.map((s) => {
-                  const regulador = USUARIOS_MOCK.find((u) => u.id === s.parecer?.reguladorId);
-                  const conflito = s.parecer?.reguladorId === usuarioAtual.id;
+                  const g = GRAVIDADE_META[s.gravidade];
                   return (
                     <TableRow key={s.id}>
                       <TableCell className="font-mono text-xs">{s.protocolo}</TableCell>
                       <TableCell className="font-medium">{s.pacienteNome}</TableCell>
-                      <TableCell>{s.parecer?.clinicaIndicada}</TableCell>
-                      <TableCell>
-                        {regulador?.nome}
-                        <div className="text-xs text-muted-foreground">CPF {regulador?.cpf}</div>
+                      <TableCell className="text-xs">
+                        {s.pacienteCpf || s.pacienteCns || "—"}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {s.parecer && formatDateTime(s.parecer.emitidoEm)}
+                        {s.unidadeOrigem}
+                        <div className="text-muted-foreground">{s.macrorregiaoOrigem}</div>
                       </TableCell>
                       <TableCell>
-                        {conflito ? (
-                          <div className="flex items-center gap-1 text-xs font-medium text-destructive">
-                            <Lock className="h-3 w-3" /> Bloqueado (autor do parecer)
-                          </div>
-                        ) : (
+                        <span className={`rounded px-2 py-0.5 text-xs font-semibold ${g.classe}`}>
+                          {g.label}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s.status} />
+                      </TableCell>
+                      <TableCell>
+                        {autoridade ? (
                           <Button size="sm" onClick={() => setAberta(s)}>
-                            <PenLine className="h-4 w-4" /> Homologar
+                            <PenLine className="h-4 w-4" /> Parecer técnico
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="secondary" onClick={() => setTriagemAberta(s)}>
+                            <ClipboardCheck className="h-4 w-4" /> Contato/triagem
                           </Button>
                         )}
                       </TableCell>
@@ -96,8 +132,11 @@ function AutoridadePage() {
                 })}
                 {fila.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                      Nenhum parecer aguardando homologação.
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-sm text-muted-foreground"
+                    >
+                      Nenhum caso aguardando decisão da autoridade sanitária.
                     </TableCell>
                   </TableRow>
                 )}
@@ -106,27 +145,157 @@ function AutoridadePage() {
           </CardContent>
         </Card>
 
-        {aberta && <HomologarDialog solicitacao={aberta} onClose={() => setAberta(null)} />}
+        {aberta && <AvaliarDialog solicitacao={aberta} onClose={() => setAberta(null)} />}
+        {triagemAberta && (
+          <TriagemEnfermagemDialog
+            solicitacao={triagemAberta}
+            onClose={() => setTriagemAberta(null)}
+          />
+        )}
       </div>
     </PerfilGate>
   );
 }
 
-function HomologarDialog({
+function AvaliarDialog({
   solicitacao,
   onClose,
 }: {
   solicitacao: Solicitacao;
   onClose: () => void;
 }) {
-  const { autorizarCompra } = useCore();
+  const { decidirAutoridade } = useCore();
+  const [decisao, setDecisao] = useState<Decisao>("COMPRA_LEITOS");
+  const [clinica, setClinica] = useState<ClinicaMedica>(
+    solicitacao.parecer?.clinicaIndicada ?? "UTI Adulto",
+  );
   const [obs, setObs] = useState("");
-  const regulador = USUARIOS_MOCK.find((u) => u.id === solicitacao.parecer?.reguladorId);
+  const cadastrador = USUARIOS_MOCK.find((u) => u.id === solicitacao.solicitanteId);
+  const gravidade = GRAVIDADE_META[solicitacao.gravidade];
 
-  const assinar = () => {
+  const salvar = () => {
+    if (obs.trim().length < 20) {
+      toast.error("Descreva a fundamentação da decisão sanitária (mín. 20 caracteres).");
+      return;
+    }
     try {
-      autorizarCompra(solicitacao.id, { observacoes: obs });
-      toast.success("Termo de Acionamento assinado digitalmente.");
+      decidirAutoridade(solicitacao.id, { decisao, observacoes: obs, clinicaIndicada: clinica });
+      toast.success("Decisão da autoridade sanitária registrada.");
+      onClose();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Avaliação Sanitária — {solicitacao.protocolo}</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-4 rounded-md border bg-card p-4 text-sm md:grid-cols-2">
+          <CampoRotulado label="Cadastrado por" valor={cadastrador?.nome ?? "—"} />
+          <CampoRotulado label="Unidade solicitante/origem" valor={solicitacao.unidadeOrigem} />
+          <CampoRotulado label="CNES da unidade" valor={solicitacao.cnesUnidadeOrigem ?? "—"} />
+          <CampoRotulado
+            label="Município / macro"
+            valor={`${solicitacao.municipioOrigem} • ${solicitacao.macrorregiaoOrigem}`}
+          />
+          <CampoRotulado label="Paciente" valor={solicitacao.pacienteNome} />
+          <CampoRotulado
+            label="CPF/CNS"
+            valor={solicitacao.pacienteCpf || solicitacao.pacienteCns || "—"}
+          />
+          <CampoRotulado label="Gravidade" valor={gravidade.label} />
+          <CampoRotulado
+            label="Diagnóstico / CID"
+            valor={`${solicitacao.diagnosticoPrincipal} (${solicitacao.cid})`}
+          />
+          <CampoRotulado
+            label="Sinais vitais"
+            valor={`PA ${solicitacao.sinaisVitais.pa}; FC ${solicitacao.sinaisVitais.fc}; FR ${solicitacao.sinaisVitais.fr}; SpO2 ${solicitacao.sinaisVitais.spo2}; T ${solicitacao.sinaisVitais.temp}`}
+          />
+          <CampoRotulado label="Descrição clínica trazida" valor={solicitacao.justificativa} />
+          <CampoRotulado
+            label="Triagem/contato da enfermagem"
+            valor={solicitacao.triagemEnfermagem?.observacoes ?? "Ainda não registrado"}
+          />
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <Label className="text-xs font-medium">Decisão da autoridade sanitária</Label>
+            <Select value={decisao} onValueChange={(v) => setDecisao(v as Decisao)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(DECISAO_LABEL) as Decisao[]).map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {DECISAO_LABEL[d]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs font-medium">Tipo de leito, se houver compra</Label>
+            <Select value={clinica} onValueChange={(v) => setClinica(v as ClinicaMedica)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CLINICAS.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs font-medium">Fundamentação / observações</Label>
+          <Textarea rows={4} value={obs} onChange={(e) => setObs(e.target.value)} />
+        </div>
+
+        <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
+          Para compra excepcional, a decisão gera autorização para a enfermagem iniciar a busca na
+          rede credenciada. Para Vaga Zero ou Leito Extra SUS, o caso sai deste fluxo operacional.
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={salvar}>
+            <ShieldCheck className="h-4 w-4" /> Registrar decisão
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TriagemEnfermagemDialog({
+  solicitacao,
+  onClose,
+}: {
+  solicitacao: Solicitacao;
+  onClose: () => void;
+}) {
+  const { registrarTriagemEnfermagem } = useCore();
+  const [contatoOrigem, setContatoOrigem] = useState(
+    solicitacao.triagemEnfermagem?.contatoOrigem ?? "",
+  );
+  const [observacoes, setObservacoes] = useState(solicitacao.triagemEnfermagem?.observacoes ?? "");
+
+  const salvar = () => {
+    try {
+      registrarTriagemEnfermagem(solicitacao.id, { contatoOrigem, observacoes });
+      toast.success("Triagem de enfermagem registrada.");
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
@@ -137,49 +306,58 @@ function HomologarDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Termo de Acionamento — {solicitacao.protocolo}</DialogTitle>
+          <DialogTitle>Triagem de enfermagem — {solicitacao.protocolo}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 rounded-md border bg-card p-4 text-sm">
-          <div>
-            <div className="text-xs text-muted-foreground">Paciente</div>
-            <div className="font-medium">{solicitacao.pacienteNome} • CPF {solicitacao.pacienteCpf}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Clínica indicada</div>
-            <div className="font-medium">{solicitacao.parecer?.clinicaIndicada}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Parecer técnico</div>
-            <div>{solicitacao.parecer?.parecerTecnico}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Vaga Zero</div>
-            <div>{solicitacao.parecer?.vagaZeroDetalhe || "—"}</div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Emitido por</div>
-            <div>{regulador?.nome} • CPF {regulador?.cpf}</div>
+        <div className="rounded-md border bg-card p-3 text-sm">
+          <div className="font-medium">{solicitacao.pacienteNome}</div>
+          <div className="text-xs text-muted-foreground">
+            {solicitacao.unidadeOrigem} • {solicitacao.macrorregiaoOrigem} • {solicitacao.cid}
           </div>
         </div>
 
         <div>
-          <Label className="text-xs font-medium">Observações da Autoridade Sanitária</Label>
-          <Textarea rows={3} value={obs} onChange={(e) => setObs(e.target.value)} />
+          <Label className="text-xs font-medium">Contato realizado pela enfermagem</Label>
+          <Textarea
+            rows={2}
+            value={contatoOrigem}
+            onChange={(e) => setContatoOrigem(e.target.value)}
+            placeholder="Ex.: contato telefônico/e-mail com unidade de origem para complementar laudo, exames ou dados operacionais."
+          />
+        </div>
+        <div>
+          <Label className="text-xs font-medium">Observações da triagem de enfermagem</Label>
+          <Textarea
+            rows={4}
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
+            placeholder="Registre informações objetivas do contato, pendências documentais e encaminhamentos operacionais."
+          />
         </div>
 
         <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
-          Ao clicar em "Assinar", será gerado o Termo de Acionamento com carimbo digital
-          contendo seu CPF, data e hora.
+          Este registro é operacional. O parecer técnico e a decisão de compra, vaga zero, leito
+          extra ou indeferimento continuam sendo exclusivos da autoridade sanitária.
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={assinar}>
-            <ShieldCheck className="h-4 w-4" /> Assinar Termo de Acionamento
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={salvar}>
+            <ClipboardCheck className="h-4 w-4" /> Registrar triagem
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CampoRotulado({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-medium">{valor}</div>
+    </div>
   );
 }
