@@ -32,8 +32,7 @@ export function enriquecerSolicitacao(s: Solicitacao): Solicitacao {
     tempoRespostaHoras: tempo ?? s.tempoRespostaHoras,
     regiaoOrigem: s.regiaoOrigem ?? s.macrorregiaoOrigem,
     tipoLeito: s.tipoLeito ?? s.parecer?.clinicaIndicada,
-    taxaAceiteRecusa:
-      s.taxaAceiteRecusa ?? (s.aceitesHospitais.length > 0 ? true : undefined),
+    taxaAceiteRecusa: s.taxaAceiteRecusa ?? (s.aceitesHospitais.length > 0 ? true : undefined),
   };
 }
 

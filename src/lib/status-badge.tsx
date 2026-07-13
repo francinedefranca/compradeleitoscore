@@ -9,7 +9,13 @@ const toneClasses: Record<string, string> = {
   muted: "bg-muted text-muted-foreground border-border",
 };
 
-export function StatusBadge({ status, className }: { status: StatusSolicitacao; className?: string }) {
+export function StatusBadge({
+  status,
+  className,
+}: {
+  status: StatusSolicitacao;
+  className?: string;
+}) {
   const meta = STATUS_META[status];
   return (
     <span
@@ -19,13 +25,15 @@ export function StatusBadge({ status, className }: { status: StatusSolicitacao; 
         className,
       )}
     >
-      <span className={cn("status-dot", {
-        "bg-info": meta.tone === "info",
-        "bg-warning": meta.tone === "warning",
-        "bg-success": meta.tone === "success",
-        "bg-destructive": meta.tone === "destructive",
-        "bg-muted-foreground": meta.tone === "muted",
-      })} />
+      <span
+        className={cn("status-dot", {
+          "bg-info": meta.tone === "info",
+          "bg-warning": meta.tone === "warning",
+          "bg-success": meta.tone === "success",
+          "bg-destructive": meta.tone === "destructive",
+          "bg-muted-foreground": meta.tone === "muted",
+        })}
+      />
       {meta.label}
     </span>
   );
