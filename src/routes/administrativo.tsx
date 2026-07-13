@@ -44,8 +44,6 @@ function hospitalDoCaso(s: Solicitacao) {
 function AdministrativoPage() {
   const { solicitacoes, usuarioAtual } = useCore();
   const somenteLeitura = usuarioAtual.perfil === "GESTAO";
-  const isCore = usuarioAtual.perfil === "ADMINISTRATIVO_CORE";
-  const isCompras = usuarioAtual.perfil === "ADMINISTRATIVO";
 
   const aguardandoInternacao = useMemo(
     () => solicitacoes.filter((s) => s.status === "LEITO_CONFIRMADO_ENFERMAGEM"),
@@ -78,23 +76,16 @@ function AdministrativoPage() {
 
 
   return (
-    <PerfilGate permitido={["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"]}>
+    <PerfilGate permitido={["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"]}>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {isCompras ? "Setor de Compras / Pagamentos" : "Administrativo CORE / SEI"}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Administrativo CORE / SEI</h1>
           <p className="text-sm text-muted-foreground">
-            {isCompras
-              ? "Pacotes documentais recebidos do Administrativo CORE para liquidação e pagamento."
-              : "O Administrativo CORE confirma internação, acompanha as buscas, recebe as faturas dos hospitais e envia o pacote documental completo (laudo, termo de acionamento, termo de esgotamento SUS e decisão judicial, quando houver) para o Setor de Compras."}
-            {somenteLeitura && " Gestão acessa esta tela em modo de visualização."}
+            O SEI e o faturamento começam somente após confirmação da internação do paciente. Gestão
+            acessa esta tela em modo de visualização.
           </p>
         </div>
 
-
-        {mostrarBlocosCore && (
-          <>
         <Card>
 
           <CardHeader>
@@ -267,73 +258,35 @@ function AdministrativoPage() {
             </CardContent>
           </Card>
         )}
-          </>
-        )}
 
-        {mostrarBlocoCompras && pagamento.length > 0 && (
+        {pagamento.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                Pacotes recebidos do Administrativo CORE • Liquidação e pagamento
-              </CardTitle>
+              <CardTitle className="text-base">Em processo financeiro</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Protocolo / SEI</TableHead>
-                    <TableHead>Paciente</TableHead>
-                    <TableHead>Hospital</TableHead>
-                    <TableHead>Documentos</TableHead>
-                    <TableHead>Recebido em</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pagamento.map((s) => {
-                    const envio = s.envioFaturas;
-                    return (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-mono text-xs">
-                          <div>{s.protocolo}</div>
-                          <div className="text-muted-foreground">{s.numeroSeiProcesso ?? "—"}</div>
-                        </TableCell>
-                        <TableCell className="text-xs">{s.pacienteNome}</TableCell>
-                        <TableCell className="text-xs">{hospitalDoCaso(s)?.nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs">
-                          <ul className="space-y-0.5">
-                            <li>Laudo: {envio?.checkLaudoPaciente ? "✓" : "—"}</li>
-                            <li>T. Acionamento: {envio?.checkTermoAcionamento ? "✓" : "—"}</li>
-                            <li>T. Esgot. SUS: {envio?.checkTermoEsgotamentoSus ? "✓" : "—"}</li>
-                            {s.judicial?.numeroProcesso && (
-                              <li>Decisão Judicial: {envio?.checkDecisaoJudicial ? "✓" : "—"}</li>
-                            )}
-                            <li>Fatura hospital: {envio?.faturaHospitalRecebida ? "✓" : "—"}</li>
-                          </ul>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          {envio && formatDateTime(envio.enviadoEm)}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={s.status} />
-                        </TableCell>
-                        <TableCell>
-                          {somenteLeitura ? (
-                            <span className="text-xs text-muted-foreground">Somente leitura</span>
-                          ) : (
-                            <RegistrarPagamentoBotao id={s.id} />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                {pagamento.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded border bg-card p-2"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {s.protocolo} — {s.pacienteNome}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        SEI {s.numeroSeiProcesso ?? "—"} • enviado em{" "}
+                        {s.envioFaturas && formatDateTime(s.envioFaturas.enviadoEm)}
+                      </div>
+                    </div>
+                    <StatusBadge status={s.status} />
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         )}
-
 
         {seiAberta && <SeiDialog solicitacao={seiAberta} onClose={() => setSeiAberta(null)} />}
         {compraAberta && (
@@ -627,9 +580,8 @@ function FaturaDialog({ solicitacao, onClose }: { solicitacao: Solicitacao; onCl
     fatura && laudo && termoAcion && termoEsg && (!exigeJudicial || decisao) && obs.trim().length >= 10;
 
   const enviar = () => {
-    if (!podeEnviar) {
-      return toast.error("Confirme fatura + todos os documentos e descreva o pacote (mín. 10 caracteres).");
-    }
+    if (obs.trim().length < 10)
+      return toast.error("Descreva o conteúdo enviado (mín. 10 caracteres).");
     try {
       enviarFaturasParaCompras(solicitacao.id, {
         observacoes: obs.trim(),

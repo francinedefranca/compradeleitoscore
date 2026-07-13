@@ -48,25 +48,32 @@ const navModulos: NavItem[] = [
     title: "Busca na Rede Credenciada",
     url: "/enfermeiro",
     icon: Search,
-    perfis: ["ENFERMEIRO", "GESTAO"],
+    perfis: ["AUTORIDADE", "ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
   },
   {
     title: "Administrativo / SEI",
     url: "/administrativo",
     icon: Briefcase,
-    perfis: ["ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
+    perfis: ["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
   },
   {
     title: "Cadastrar Caso",
     url: "/solicitante/nova",
     icon: Activity,
-    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"],
+    perfis: ["REGULADOR", "AUTORIDADE", "ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"],
   },
   {
     title: "Casos Cadastrados",
     url: "/solicitante",
     icon: FileText,
-    perfis: ["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"],
+    perfis: [
+      "REGULADOR",
+      "AUTORIDADE",
+      "ENFERMEIRO",
+      "ADMINISTRATIVO",
+      "ADMINISTRATIVO_CORE",
+      "GESTAO",
+    ],
   },
 ];
 

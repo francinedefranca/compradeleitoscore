@@ -57,7 +57,7 @@ const TEMPO_LIMITE_EXPANSAO_S = 24 * 60 * 60;
 
 function EnfermeiroPage() {
   const { solicitacoes, iniciarBuscaMacro, usuarioAtual } = useCore();
-  const somenteLeitura = usuarioAtual.perfil === "GESTAO";
+  const somenteLeitura = ["AUTORIDADE", "GESTAO"].includes(usuarioAtual.perfil);
   type VisaoEnfermagem =
     | "cadastradas"
     | "aguardando_autoridade"
@@ -176,14 +176,16 @@ function EnfermeiroPage() {
   const selecionada = fila.find((s) => s.id === selecionadaId) ?? null;
 
   return (
-    <PerfilGate permitido={["ENFERMEIRO", "GESTAO"]}>
+    <PerfilGate
+      permitido={["AUTORIDADE", "ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"]}
+    >
       <div className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Enfermagem Navegadora</h1>
             <p className="text-sm text-muted-foreground">
-              Busca ativa de leitos em hospitais credenciados após homologação da Autoridade
-              Sanitária.
+              Busca ativa de leitos em hospitais credenciados após autorização sanitária, com visão
+              completa para autoridade e atuação operacional da enfermagem/apoio.
             </p>
           </div>
           {somenteLeitura && (

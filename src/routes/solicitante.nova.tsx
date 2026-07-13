@@ -47,11 +47,11 @@ const schema = z.object({
   cid: z.string().trim().min(2).max(10),
   gravidade: z.enum(["VERMELHO", "LARANJA", "AMARELO", "VERDE"]),
   justificativa: z.string().trim().min(20, "Descreva com mais detalhes").max(1000),
-  pa: z.string().min(1),
-  fc: z.string().min(1),
-  fr: z.string().min(1),
-  temp: z.string().min(1),
-  spo2: z.string().min(1),
+  pa: z.string().optional(),
+  fc: z.string().optional(),
+  fr: z.string().optional(),
+  temp: z.string().optional(),
+  spo2: z.string().optional(),
   glasgow: z.string().optional(),
   gatilhoCompra: z.enum([
     "ESGOTAMENTO_CLINICO",
@@ -127,15 +127,18 @@ function NovaSolicitacao() {
   };
 
   return (
-    <PerfilGate permitido={["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]}>
+    <PerfilGate
+      permitido={["REGULADOR", "AUTORIDADE", "ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]}
+    >
       <div className="mx-auto max-w-4xl space-y-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             Cadastrar caso de compra excepcional
           </h1>
           <p className="text-sm text-muted-foreground">
-            Cadastro interno após o médico regulador ou a autoridade sanitária identificar, na
-            ferramenta estadual, hipótese excepcional de compra de leito.
+            Cadastro interno após médico regulador, autoridade sanitária, enfermagem ou apoio
+            administrativo identificar, na ferramenta estadual, hipótese excepcional de compra de
+            leito.
           </p>
         </div>
 

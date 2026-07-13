@@ -139,18 +139,7 @@ interface CoreStore {
     },
   ) => void;
   registrarInternacao: (id: string) => void;
-  enviarFaturasParaCompras: (
-    id: string,
-    dados: {
-      observacoes: string;
-      faturaHospitalRecebida: boolean;
-      checkLaudoPaciente: boolean;
-      checkTermoAcionamento: boolean;
-      checkTermoEsgotamentoSus: boolean;
-      checkDecisaoJudicial?: boolean;
-    },
-  ) => void;
-  registrarPagamento: (id: string, observacoes: string) => void;
+  enviarFaturasParaCompras: (id: string, observacoes: string) => void;
 }
 
 export interface NovaSolicitacaoInput {
@@ -239,7 +228,13 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const criarSolicitacao: CoreStore["criarSolicitacao"] = useCallback(
     (data) => {
-      requirePerfil(["REGULADOR", "AUTORIDADE", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
+      requirePerfil([
+        "REGULADOR",
+        "AUTORIDADE",
+        "ENFERMEIRO",
+        "ADMINISTRATIVO",
+        "ADMINISTRATIVO_CORE",
+      ]);
       const nova: Solicitacao = {
         id: uid("s"),
         protocolo: proximoProtocolo(),
@@ -451,7 +446,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const marcarRepescagemRealizada: CoreStore["marcarRepescagemRealizada"] = useCallback(
     (id, contatoId) => {
-      requirePerfil("ENFERMEIRO");
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => ({
         ...s,
         historicoContatos: (s.historicoContatos ?? []).map((c) =>
@@ -465,7 +460,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const iniciarBuscaMacro: CoreStore["iniciarBuscaMacro"] = useCallback(
     (id) => {
-      requirePerfil("ENFERMEIRO");
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => ({
         ...s,
         buscaIniciadaEm: nowIso(),
@@ -482,7 +477,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const registrarAceite: CoreStore["registrarAceite"] = useCallback(
     (id, hospitalId, vagas) => {
-      requirePerfil("ENFERMEIRO");
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => ({
         ...s,
         aceitesHospitais: [
@@ -502,7 +497,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const expandirParaEstadual: CoreStore["expandirParaEstadual"] = useCallback(
     (id) => {
-      requirePerfil("ENFERMEIRO");
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => {
         const temAceiteMacrorregional = s.aceitesHospitais.some(
           (a) => (a.escopoBusca ?? "MACRO_ORIGEM") !== "ESTADUAL",
@@ -547,7 +542,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const confirmarLeitoEnfermagem: CoreStore["confirmarLeitoEnfermagem"] = useCallback(
     (id, dados) => {
-      requirePerfil("ENFERMEIRO");
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       const escolha: EscolhaEnfermagem = {
         ...dados,
         confirmadoEm: nowIso(),
@@ -570,7 +565,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const abrirProcessoSei: CoreStore["abrirProcessoSei"] = useCallback(
     (id, dados) => {
-      requirePerfil(["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => ({
         ...s,
         processoSei: {
@@ -597,7 +592,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const registrarCompra: CoreStore["registrarCompra"] = useCallback(
     (id, dados) => {
-      requirePerfil(["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => ({
         ...s,
         compra: {
@@ -627,7 +622,7 @@ export function CoreProvider({ children }: { children: ReactNode }) {
 
   const registrarInternacao: CoreStore["registrarInternacao"] = useCallback(
     (id) => {
-      requirePerfil(["ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
       patch(id, (s) => ({ ...s, status: "INTERNADO" }));
       logAudit({ acao: "Internação confirmada", solicitacaoId: id, statusDepois: "INTERNADO" });
     },
@@ -635,37 +630,14 @@ export function CoreProvider({ children }: { children: ReactNode }) {
   );
 
   const enviarFaturasParaCompras: CoreStore["enviarFaturasParaCompras"] = useCallback(
-    (id, dados) => {
-      requirePerfil(["ADMINISTRATIVO_CORE"]);
-      patch(id, (s) => {
-        const exigeJudicial = Boolean(s.judicial?.numeroProcesso);
-        if (
-          !dados.faturaHospitalRecebida ||
-          !dados.checkLaudoPaciente ||
-          !dados.checkTermoAcionamento ||
-          !dados.checkTermoEsgotamentoSus ||
-          (exigeJudicial && !dados.checkDecisaoJudicial)
-        ) {
-          throw new Error(
-            "Confirme o recebimento da fatura e anexe todos os documentos obrigatórios.",
-          );
-        }
-        return {
-          ...s,
-          faturasEnviadasCompras: true,
-          envioFaturas: {
-            enviadoEm: nowIso(),
-            enviadoPorId: usuarioAtual.id,
-            observacoes: dados.observacoes,
-            faturaHospitalRecebida: dados.faturaHospitalRecebida,
-            checkLaudoPaciente: dados.checkLaudoPaciente,
-            checkTermoAcionamento: dados.checkTermoAcionamento,
-            checkTermoEsgotamentoSus: dados.checkTermoEsgotamentoSus,
-            checkDecisaoJudicial: exigeJudicial ? dados.checkDecisaoJudicial : undefined,
-          },
-          status: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
-        };
-      });
+    (id, observacoes) => {
+      requirePerfil(["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE"]);
+      patch(id, (s) => ({
+        ...s,
+        faturasEnviadasCompras: true,
+        envioFaturas: { enviadoEm: nowIso(), enviadoPorId: usuarioAtual.id, observacoes },
+        status: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
+      }));
       logAudit({
         acao: "Pacote documental enviado ao Setor de Compras",
         detalhe: dados.observacoes,
@@ -675,19 +647,6 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     },
     [logAudit, patch, usuarioAtual],
   );
-
-  const registrarPagamento: CoreStore["registrarPagamento"] = useCallback(
-    (id, observacoes) => {
-      requirePerfil(["ADMINISTRATIVO"]);
-      logAudit({
-        acao: "Pagamento registrado pelo Setor de Compras",
-        detalhe: observacoes,
-        solicitacaoId: id,
-      });
-    },
-    [logAudit],
-  );
-
 
   const value: CoreStore = {
     usuarios: USUARIOS_MOCK,
@@ -714,7 +673,6 @@ export function CoreProvider({ children }: { children: ReactNode }) {
     registrarCompra,
     registrarInternacao,
     enviarFaturasParaCompras,
-    registrarPagamento,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

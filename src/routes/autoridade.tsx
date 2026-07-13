@@ -214,7 +214,7 @@ function AvaliarDialog({
           />
           <CampoRotulado
             label="Sinais vitais"
-            valor={`PA ${solicitacao.sinaisVitais.pa}; FC ${solicitacao.sinaisVitais.fc}; FR ${solicitacao.sinaisVitais.fr}; SpO2 ${solicitacao.sinaisVitais.spo2}; T ${solicitacao.sinaisVitais.temp}`}
+            valor={`PA ${solicitacao.sinaisVitais.pa || "—"}; FC ${solicitacao.sinaisVitais.fc || "—"}; FR ${solicitacao.sinaisVitais.fr || "—"}; SpO2 ${solicitacao.sinaisVitais.spo2 || "—"}; T ${solicitacao.sinaisVitais.temp || "—"}`}
           />
           <CampoRotulado label="Descrição clínica trazida" valor={solicitacao.justificativa} />
           <CampoRotulado

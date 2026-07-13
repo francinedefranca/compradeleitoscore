@@ -142,11 +142,11 @@ export const GRAVIDADE_META: Record<Gravidade, { label: string; classe: string; 
 
 // ---------- Sinais vitais / anexos / gatilhos ----------
 export interface SinaisVitais {
-  pa: string;
-  fc: string;
-  fr: string;
-  temp: string;
-  spo2: string;
+  pa?: string;
+  fc?: string;
+  fr?: string;
+  temp?: string;
+  spo2?: string;
   glasgow?: string;
 }
 export interface Anexo {
