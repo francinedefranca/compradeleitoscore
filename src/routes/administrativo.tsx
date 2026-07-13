@@ -66,9 +66,14 @@ function AdministrativoPage() {
     [solicitacoes],
   );
 
+  // CORE administra tudo até enviar; Compras vê apenas o pacote recebido.
+  const mostrarBlocosCore = !isCompras;
+  const mostrarBlocoCompras = !isCore;
+
   const [seiAberta, setSeiAberta] = useState<Solicitacao | null>(null);
   const [compraAberta, setCompraAberta] = useState<Solicitacao | null>(null);
   const [faturaAberta, setFaturaAberta] = useState<Solicitacao | null>(null);
+
 
   return (
     <PerfilGate permitido={["ENFERMEIRO", "ADMINISTRATIVO", "ADMINISTRATIVO_CORE", "GESTAO"]}>
@@ -82,6 +87,7 @@ function AdministrativoPage() {
         </div>
 
         <Card>
+
           <CardHeader>
             <CardTitle className="text-base">Aguardando confirmação de internação</CardTitle>
           </CardHeader>
@@ -564,13 +570,28 @@ function ComprarDialog({
 function FaturaDialog({ solicitacao, onClose }: { solicitacao: Solicitacao; onClose: () => void }) {
   const { enviarFaturasParaCompras } = useCore();
   const [obs, setObs] = useState("");
+  const [fatura, setFatura] = useState(false);
+  const [laudo, setLaudo] = useState(false);
+  const [termoAcion, setTermoAcion] = useState(false);
+  const [termoEsg, setTermoEsg] = useState(false);
+  const [decisao, setDecisao] = useState(false);
+  const exigeJudicial = Boolean(solicitacao.judicial?.numeroProcesso);
+  const podeEnviar =
+    fatura && laudo && termoAcion && termoEsg && (!exigeJudicial || decisao) && obs.trim().length >= 10;
 
   const enviar = () => {
     if (obs.trim().length < 10)
       return toast.error("Descreva o conteúdo enviado (mín. 10 caracteres).");
     try {
-      enviarFaturasParaCompras(solicitacao.id, obs);
-      toast.success("Faturas encaminhadas para auditoria e liquidação.");
+      enviarFaturasParaCompras(solicitacao.id, {
+        observacoes: obs.trim(),
+        faturaHospitalRecebida: fatura,
+        checkLaudoPaciente: laudo,
+        checkTermoAcionamento: termoAcion,
+        checkTermoEsgotamentoSus: termoEsg,
+        checkDecisaoJudicial: exigeJudicial ? decisao : undefined,
+      });
+      toast.success("Pacote documental enviado ao Setor de Compras.");
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
@@ -579,26 +600,88 @@ function FaturaDialog({ solicitacao, onClose }: { solicitacao: Solicitacao; onCl
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Encaminhar faturas — {solicitacao.protocolo}</DialogTitle>
+          <DialogTitle>Enviar pacote ao Setor de Compras — {solicitacao.protocolo}</DialogTitle>
         </DialogHeader>
         <div className="rounded-md border border-info/30 bg-info/10 p-3 text-xs text-info">
-          Ao encaminhar, o processo entra em auditoria e liquidação financeira.
+          Confirme o recebimento da fatura hospitalar e anexe os documentos obrigatórios. Após o
+          envio, o Setor de Compras assume a liquidação financeira.
         </div>
+
+        <div className="space-y-2 rounded-md border p-3">
+          <div className="mb-1 text-xs font-medium">Fatura do hospital</div>
+          <CheckItem
+            checked={fatura}
+            onChange={setFatura}
+            label="Fatura hospitalar recebida e conferida"
+          />
+        </div>
+
+        <div className="space-y-2 rounded-md border p-3">
+          <div className="mb-1 text-xs font-medium">Documentos obrigatórios do pacote</div>
+          <CheckItem checked={laudo} onChange={setLaudo} label="Laudo do paciente" />
+          <CheckItem
+            checked={termoAcion}
+            onChange={setTermoAcion}
+            label="Termo de Acionamento da Autoridade Sanitária"
+          />
+          <CheckItem
+            checked={termoEsg}
+            onChange={setTermoEsg}
+            label="Termo de Esgotamento de Leito SUS"
+          />
+          {exigeJudicial && (
+            <CheckItem
+              checked={decisao}
+              onChange={setDecisao}
+              label={`Decisão judicial — processo ${solicitacao.judicial?.numeroProcesso}`}
+            />
+          )}
+        </div>
+
         <div>
-          <Label className="text-xs font-medium">Observações / documentos anexos</Label>
-          <Textarea rows={3} value={obs} onChange={(e) => setObs(e.target.value)} />
+          <Label className="text-xs font-medium">Observações do encaminhamento</Label>
+          <Textarea
+            rows={3}
+            value={obs}
+            onChange={(e) => setObs(e.target.value)}
+            placeholder="Ex.: valores conferidos, período da internação, itens de OPME etc."
+          />
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={enviar}>
-            <Send className="h-4 w-4" /> Encaminhar
+          <Button onClick={enviar} disabled={!podeEnviar}>
+            <Send className="h-4 w-4" /> Enviar ao Setor de Compras
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+function RegistrarPagamentoBotao({ id }: { id: string }) {
+  const { registrarPagamento } = useCore();
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={() => {
+        try {
+          registrarPagamento(id, "Pagamento registrado pelo Setor de Compras.");
+          toast.success("Pagamento registrado em auditoria.");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Erro");
+        }
+      }}
+    >
+      <CheckCircle2 className="h-4 w-4" /> Registrar pagamento
+    </Button>
+  );
+}
+
+
+

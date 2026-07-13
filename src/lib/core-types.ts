@@ -375,7 +375,13 @@ export interface EnvioFaturas {
   enviadoEm: string;
   enviadoPorId: string;
   observacoes: string;
+  faturaHospitalRecebida: boolean;
+  checkLaudoPaciente: boolean;
+  checkTermoAcionamento: boolean;
+  checkTermoEsgotamentoSus: boolean;
+  checkDecisaoJudicial?: boolean;
 }
+
 
 export interface Judicial {
   numeroProcesso: string;

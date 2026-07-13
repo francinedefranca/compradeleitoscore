@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { Phone, Send } from "lucide-react";
 import { toast } from "sonner";
-import { Phone, Mail, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +52,14 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
   const [escopo, setEscopo] = useState<EscopoBusca>(solicitacao.escopoBuscaAtual ?? "MACRO_ORIGEM");
 
   const salvar = () => {
+    if (!hospitalNome.trim()) {
+      toast.error("Informe o hospital contatado.");
+      return;
+    }
+    if (resultado === "RECUSA" && justificativaRecusa.trim().length < 5) {
+      toast.error("Justifique tecnicamente a recusa.");
+      return;
+    }
     try {
       registrarContato(solicitacao.id, {
         hospitalNome: hospitalNome.trim(),
@@ -108,7 +116,7 @@ export function RegistroTentativaContato({ solicitacao }: { solicitacao: Solicit
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Array.isArray(historico) && historico.length > 0 ? (
+              {historico.length > 0 ? (
                 historico.map((h) => (
                   <TableRow key={h.id}>
                     <TableCell className="text-xs">{formatDateTime(h.dataHoraContato)}</TableCell>

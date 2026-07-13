@@ -639,8 +639,8 @@ export function CoreProvider({ children }: { children: ReactNode }) {
         status: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
       }));
       logAudit({
-        acao: "Faturas encaminhadas",
-        detalhe: observacoes,
+        acao: "Pacote documental enviado ao Setor de Compras",
+        detalhe: dados.observacoes,
         solicitacaoId: id,
         statusDepois: "PROCESSO_FINANCEIRO_EM_PAGAMENTO",
       });
